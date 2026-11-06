@@ -17,7 +17,7 @@ Spec: `docs/superpowers/specs/2026-11-02-desktop-app-design.md` (seção "Marco 
 - No máximo 24 luas por projeto (as conversas mais recentes).
 - Qualidade: 3 amostras seguidas (1 por segundo) abaixo de 30 FPS desligam o bloom; mais 3 baixam os passos do shader de 220 para 90.
 - "Reduzir movimento" congela órbitas, rotação e pulsos; padrão vem de `prefers-reduced-motion`. "Modo 3D" desligado ou sem WebGL 2: interface do marco 1.
-- Preferências em `localStorage`: `llm-agent-3d` e `llm-agent-reduce-motion` (`'1'`/`'0'`).
+- Preferências em `localStorage`: `jarvis-3d` e `jarvis-reduce-motion` (`'1'`/`'0'`).
 - `Esc` (fora do terminal e da busca) fecha o painel e volta a câmera para a visão geral.
 - Textos de interface em português.
 
@@ -1061,7 +1061,7 @@ export function Sidebar({ overview, view, sessions, settings, onSelect, onToggle
   const cls = (active: boolean) => (active ? 'nav active' : 'nav');
   return (
     <nav className="sidebar">
-      <div className="brand">llm-agent</div>
+      <div className="brand">jarvis</div>
       <button className={cls(view.kind === 'profile')} onClick={() => onSelect({ kind: 'profile' })}>
         Você
       </button>
@@ -1228,7 +1228,7 @@ export function App() {
   if (!token) {
     return (
       <div className="fatal">
-        Abra a interface pela URL impressa por <code>llm-agent ui</code>.
+        Abra a interface pela URL impressa por <code>jarvis ui</code>.
       </div>
     );
   }
@@ -1238,8 +1238,8 @@ export function App() {
 function Connected({ token }: { token: string }) {
   const api = useMemo(() => new Api(token), [token]);
   const webgl = useMemo(hasWebGL, []);
-  const [mode3d, setMode3d] = usePref('llm-agent-3d', true);
-  const [reduceMotion, setReduceMotion] = usePref('llm-agent-reduce-motion', systemReducedMotion());
+  const [mode3d, setMode3d] = usePref('jarvis-3d', true);
+  const [reduceMotion, setReduceMotion] = usePref('jarvis-reduce-motion', systemReducedMotion());
   const use3d = webgl && mode3d;
 
   const [overview, setOverview] = useState<Overview | null>(null);
@@ -1469,7 +1469,7 @@ Expected: sem erros de tipo; testes `passed`; build gera um chunk separado para 
 
 - [ ] **Step 6: Verificação manual (usuário)**
 
-Run (no host WSL): `llm-agent ui --stop; llm-agent ui` e abrir a URL.
+Run (no host WSL): `jarvis ui --stop; jarvis ui` e abrir a URL.
 Expected:
 1. Buraco negro no centro com disco distorcido pela lente (a parte de trás do disco aparece por cima e por baixo da sombra), anel de fótons e um lado do disco mais brilhante.
 2. Projetos orbitando; passar o mouse mostra nome e data; clicar voa até o projeto, abre o painel e mostra as luas.

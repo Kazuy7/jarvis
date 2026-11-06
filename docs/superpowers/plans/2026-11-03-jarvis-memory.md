@@ -16,7 +16,7 @@ nas próximas sessões (mesmo depois de reiniciar o servidor).
 ## Global Constraints
 - Textos para o usuário em português do Brasil.
 - **Arquivo da memória:**
-  - local: `<stateDir>/jarvis-memory.json` (padrão `~/.config/llm-agent/ui/jarvis-memory.json`), modo 0600;
+  - local: `<stateDir>/jarvis-memory.json` (padrão `~/.config/jarvis/ui/jarvis-memory.json`), modo 0600;
   - no máximo 300 fatos e 20 conversas;
   - no prompt entram os fatos e as 5 últimas conversas.
 - **Assuntos dos fatos:** `usuario`, `projeto`, `preferencia`, `pessoa`, `outro`.
@@ -728,7 +728,7 @@ O `<p className="muted">` do topo passa a dizer "O que os agentes e o Jarvis sab
 
 `README.md`: depois do parágrafo "O Jarvis responde também sobre o dia…", adicionar:
 
-> **Memória:** o Jarvis guarda o que aprende nas conversas (seu nome, preferências, pessoas, metas e decisões dos projetos) e um resumo de cada conversa, e usa isso nas próximas, mesmo depois de reiniciar. Diga "lembra que…" para guardar algo na hora, "o que você lembra sobre mim?" para ouvir, e "esquece que…" para apagar. Na seção **Você**, "O Jarvis lembra" mostra tudo, com um botão para apagar cada item. Fica só no seu PC, em `~/.config/llm-agent/ui/jarvis-memory.json` (permissão 600). O conteúdo vai para o Claude junto com as instruções do Jarvis, como as memórias dos agentes.
+> **Memória:** o Jarvis guarda o que aprende nas conversas (seu nome, preferências, pessoas, metas e decisões dos projetos) e um resumo de cada conversa, e usa isso nas próximas, mesmo depois de reiniciar. Diga "lembra que…" para guardar algo na hora, "o que você lembra sobre mim?" para ouvir, e "esquece que…" para apagar. Na seção **Você**, "O Jarvis lembra" mostra tudo, com um botão para apagar cada item. Fica só no seu PC, em `~/.config/jarvis/ui/jarvis-memory.json` (permissão 600). O conteúdo vai para o Claude junto com as instruções do Jarvis, como as memórias dos agentes.
 
 - [ ] **Step 4: Verify**
 

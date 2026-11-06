@@ -19,7 +19,7 @@ Spec: `docs/superpowers/specs/2026-11-02-desktop-app-design.md` (seção "Marco 
 - Cores dos estados: idle `#4f8cff`, listening `#3fd5ff`, thinking `#9b6bff`, speaking `#6aa8ff`.
 - Até 12 cartões por página. A elipse dos cartões tem raios de 36% da largura (máx. 560 px) e 36% da altura (máx. 320 px) da área central; o primeiro cartão fica no topo.
 - `Esc` (fora do terminal e da busca): fecha o painel; sem painel, sobe um nível.
-- Preferências em `localStorage`: `llm-agent-3d`, `llm-agent-reduce-motion`, `llm-agent-voice-demo`.
+- Preferências em `localStorage`: `jarvis-3d`, `jarvis-reduce-motion`, `jarvis-voice-demo`.
 - Qualidade: 3 amostras abaixo de 30 FPS desligam o bloom; mais 3 baixam a malha do núcleo de 64 para 24 subdivisões.
 - Textos de interface em português.
 
@@ -1093,7 +1093,7 @@ export function Sidebar(props: Props) {
   const use3d = settings.webgl && settings.mode3d;
   return (
     <nav className="sidebar">
-      <div className="brand">llm-agent</div>
+      <div className="brand">jarvis</div>
       <button className={cls(view.kind === 'profile')} onClick={() => onSelect({ kind: 'profile' })}>
         Você
       </button>
@@ -1234,7 +1234,7 @@ export function App() {
   if (!token) {
     return (
       <div className="fatal">
-        Abra a interface pela URL impressa por <code>llm-agent ui</code>.
+        Abra a interface pela URL impressa por <code>jarvis ui</code>.
       </div>
     );
   }
@@ -1244,9 +1244,9 @@ export function App() {
 function Connected({ token }: { token: string }) {
   const api = useMemo(() => new Api(token), [token]);
   const webgl = useMemo(hasWebGL, []);
-  const [mode3d, setMode3d] = usePref('llm-agent-3d', true);
-  const [reduceMotion, setReduceMotion] = usePref('llm-agent-reduce-motion', systemReducedMotion());
-  const [voiceDemo, setVoiceDemo] = usePref('llm-agent-voice-demo', false);
+  const [mode3d, setMode3d] = usePref('jarvis-3d', true);
+  const [reduceMotion, setReduceMotion] = usePref('jarvis-reduce-motion', systemReducedMotion());
+  const [voiceDemo, setVoiceDemo] = usePref('jarvis-voice-demo', false);
   const use3d = webgl && mode3d;
 
   const [overview, setOverview] = useState<Overview | null>(null);
@@ -1605,7 +1605,7 @@ Expected: sem erros de tipo; testes `passed`; build gera o chunk `CoreScene-*.js
 
 - [ ] **Step 5: Verificação manual (usuário)**
 
-Run (no host WSL): `rm -rf app/web/dist; llm-agent ui --stop; llm-agent ui` e abrir a URL.
+Run (no host WSL): `rm -rf app/web/dist; jarvis ui --stop; jarvis ui` e abrir a URL.
 Expected:
 1. Átomo no centro com três órbitas e elétrons com rastro; cartões Você, Projetos, Skills e Sessões abertas em volta.
 2. "Demonstração de voz": o átomo fica ciano (ouvindo), violeta com elétrons rápidos (pensando) e pulsa e se deforma (falando); a legenda abaixo mostra o estado.

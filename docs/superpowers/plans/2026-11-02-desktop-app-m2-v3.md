@@ -18,9 +18,9 @@ Spec: `docs/superpowers/specs/2026-11-02-desktop-app-design.md` (seção "Marco 
 - Calor alvo: idle 0,05; listening 0,2; thinking 0,5; speaking 0,3 + 0,7 × nível. Sem halo e sem aumento de brilho ao falar.
 - Cartões: espaçamento vertical de 40 px; de 6 a 18 por página (`pageSizeFor`).
 - Nome de projeto novo: `/^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/`.
-- Pasta de trabalho: `${XDG_DATA_HOME:-$HOME/.local/share}/llm-agent/workspace`. Pasta-base de projetos: `LLM_AGENT_PROJECTS_DIR` ou a pasta-mãe mais comum dos projetos; sem projetos, `~/projetos`.
+- Pasta de trabalho: `${XDG_DATA_HOME:-$HOME/.local/share}/jarvis/workspace`. Pasta-base de projetos: `JARVIS_PROJECTS_DIR` ou a pasta-mãe mais comum dos projetos; sem projetos, `~/projetos`.
 - `/api/day`: clima com cache de 15 min, notícias de 30 min, tempo limite de 5 s, até 8 notícias, só links `http(s)`.
-- Variáveis novas: `LLM_AGENT_UI_CITY`, `LLM_AGENT_UI_NEWS_RSS`, `LLM_AGENT_PROJECTS_DIR`.
+- Variáveis novas: `JARVIS_UI_CITY`, `JARVIS_UI_NEWS_RSS`, `JARVIS_PROJECTS_DIR`.
 - Textos de interface em português.
 
 ## Convenção
@@ -232,7 +232,7 @@ test('day sem localizacao e com noticias fora do ar: erros separados', async () 
   const service = createDayService({ fetch: fakeFetch({ failNews: true }).impl, newsUrl: 'https://news.example/rss' });
   const d = await service.day();
   assert.equal(d.weather, null);
-  assert.match(d.weatherError ?? '', /LLM_AGENT_UI_CITY/);
+  assert.match(d.weatherError ?? '', /JARVIS_UI_CITY/);
   assert.deepEqual(d.news, []);
   assert.match(d.newsError ?? '', /503/);
 });
@@ -387,9 +387,9 @@ import { buildFixture } from './fixture.ts';
 import { startApp } from './app.ts';
 import { tempHome, waitFor, write } from './helpers.ts';
 
-/** llm-agent falso: mostra argumentos e projeto, le uma linha e sai com 3. */
+/** jarvis falso: mostra argumentos e projeto, le uma linha e sai com 3. */
 function fakeAgent(dir: string): string {
-  const bin = join(dir, 'fake-llm-agent');
+  const bin = join(dir, 'fake-jarvis');
   write(bin, '#!/usr/bin/env bash\necho "ARGS:$*"\necho "WORKDIR:$AGENT_WORKDIR"\nIFS= read -r line\necho "GOT:$line"\nexit 3\n');
   chmodSync(bin, 0o755);
   return bin;
@@ -405,7 +405,7 @@ test('agentArgs monta os comandos de cada agente', () => {
   assert.deepEqual(agentArgs('shell', undefined, 'oi'), ['zsh']);
 });
 
-test('TerminalManager executa o llm-agent no projeto e guarda o historico', async () => {
+test('TerminalManager executa o jarvis no projeto e guarda o historico', async () => {
   const home = tempHome();
   const proj = join(home, 'proj');
   mkdirSync(proj);
@@ -762,7 +762,7 @@ export function createDayService(opts: DayOptions) {
   async function locate(lat?: number, lon?: number): Promise<{ lat: number; lon: number; place: string }> {
     if (lat !== undefined && lon !== undefined) return { lat, lon, place: '' };
     const city = opts.city;
-    if (!city) throw new Error('Permita a localização no navegador ou defina LLM_AGENT_UI_CITY.');
+    if (!city) throw new Error('Permita a localização no navegador ou defina JARVIS_UI_CITY.');
     return memo(`geo:${city}`, 24 * 3600e3, async () => {
       const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=1&language=pt`;
       const r = (await (await get(url)).json()).results?.[0];
@@ -1001,7 +1001,7 @@ import type { IPty } from '@lydell/node-pty';
 import type { SessionAgent, SessionInfo } from './types.ts';
 
 /**
- * Argumentos do llm-agent para cada agente, no modo autonomo do menu. A
+ * Argumentos do jarvis para cada agente, no modo autonomo do menu. A
  * instrucao inicial (prompt) vai como ultimo argumento; o shell a ignora.
  */
 export function agentArgs(agent: SessionAgent, resume?: string, prompt?: string): string[] {
@@ -1132,7 +1132,7 @@ export interface AppOptions {
   port: number;
   token: string;
   webDir: string;
-  /** Caminho do llm-agent executado pelos terminais. */
+  /** Caminho do jarvis executado pelos terminais. */
   bin: string;
   extraOrigins: string[];
   /** Pasta das sessoes de tarefa ("+ Nova skill", "+ Sobre mim"); fica fora da lista de projetos. */
@@ -1372,7 +1372,7 @@ export function createApp(opts: AppOptions): App {
 ```
 
 ```ts file=app/server/src/main.ts
-// Processo do servidor da interface. Normalmente iniciado por "llm-agent ui".
+// Processo do servidor da interface. Normalmente iniciado por "jarvis ui".
 import { rmSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { createApp } from './server.ts';
@@ -1381,27 +1381,27 @@ import { watchPaths } from './watch.ts';
 
 const home = process.env.HOME;
 if (!home) {
-  console.error('llm-agent ui: HOME nao definido');
+  console.error('jarvis ui: HOME nao definido');
   process.exit(1);
 }
 
 const repo = resolve(import.meta.dirname, '..', '..', '..');
 const stateDir =
-  process.env.LLM_AGENT_UI_STATE_DIR ?? join(process.env.XDG_CONFIG_HOME ?? join(home, '.config'), 'llm-agent', 'ui');
-const workspaceDir = join(process.env.XDG_DATA_HOME ?? join(home, '.local', 'share'), 'llm-agent', 'workspace');
+  process.env.JARVIS_UI_STATE_DIR ?? join(process.env.XDG_CONFIG_HOME ?? join(home, '.config'), 'jarvis', 'ui');
+const workspaceDir = join(process.env.XDG_DATA_HOME ?? join(home, '.local', 'share'), 'jarvis', 'workspace');
 const token = loadOrCreateToken(stateDir);
 
 const app = createApp({
   home,
-  port: Number(process.env.LLM_AGENT_UI_PORT ?? 7777),
+  port: Number(process.env.JARVIS_UI_PORT ?? 7777),
   token,
   webDir: join(repo, 'app', 'web', 'dist'),
-  bin: process.env.LLM_AGENT_BIN ?? join(repo, 'llm-agent'),
-  extraOrigins: (process.env.LLM_AGENT_UI_ORIGINS ?? '').split(',').map((s) => s.trim()).filter(Boolean),
+  bin: process.env.JARVIS_BIN ?? join(repo, 'jarvis'),
+  extraOrigins: (process.env.JARVIS_UI_ORIGINS ?? '').split(',').map((s) => s.trim()).filter(Boolean),
   workspaceDir,
-  projectsDir: process.env.LLM_AGENT_PROJECTS_DIR || undefined,
-  city: process.env.LLM_AGENT_UI_CITY || undefined,
-  newsUrl: process.env.LLM_AGENT_UI_NEWS_RSS || undefined,
+  projectsDir: process.env.JARVIS_PROJECTS_DIR || undefined,
+  city: process.env.JARVIS_UI_CITY || undefined,
+  newsUrl: process.env.JARVIS_UI_NEWS_RSS || undefined,
 });
 
 const port = await app.listen();
@@ -1417,7 +1417,7 @@ const stopWatching = watchPaths(
   ],
   () => app.broadcast({ type: 'changed' }),
 );
-console.log(`llm-agent ui ouvindo em http://127.0.0.1:${port}`);
+console.log(`jarvis ui ouvindo em http://127.0.0.1:${port}`);
 
 let stopping = false;
 async function stop(): Promise<void> {
@@ -2145,10 +2145,10 @@ export function nextQuality(q: Quality, fps: number): Quality {
 ```ts file=app/web/src/api.ts
 import type { ClientMessage, DayInfo, Overview, ProjectDetail, ServerMessage } from './types.ts';
 
-const TOKEN_KEY = 'llm-agent-token';
+const TOKEN_KEY = 'jarvis-token';
 
 /**
- * Token vindo de "#token=..." (impresso pelo llm-agent ui). Fica no
+ * Token vindo de "#token=..." (impresso pelo jarvis ui). Fica no
  * sessionStorage e sai da barra de enderecos.
  */
 export function takeToken(
@@ -2697,7 +2697,7 @@ export function DayPanel({ api, settings, toggles }: Props) {
 
   return (
     <aside className="day">
-      <div className="brand">llm-agent</div>
+      <div className="brand">jarvis</div>
       <div className="clock">
         <div className="time">
           {time}
@@ -2841,7 +2841,7 @@ export function Sidebar({ overview, view, sessions, settings, toggles, onSelect 
   const cls = (active: boolean) => (active ? 'nav active' : 'nav');
   return (
     <nav className="sidebar">
-      <div className="brand">llm-agent</div>
+      <div className="brand">jarvis</div>
       <button className={cls(view.kind === 'profile')} onClick={() => onSelect({ kind: 'profile' })}>
         Você
       </button>
@@ -2994,7 +2994,7 @@ export function App() {
   if (!token) {
     return (
       <div className="fatal">
-        Abra a interface pela URL impressa por <code>llm-agent ui</code>.
+        Abra a interface pela URL impressa por <code>jarvis ui</code>.
       </div>
     );
   }
@@ -3004,9 +3004,9 @@ export function App() {
 function Connected({ token }: { token: string }) {
   const api = useMemo(() => new Api(token), [token]);
   const webgl = useMemo(hasWebGL, []);
-  const [mode3d, setMode3d] = usePref('llm-agent-3d', true);
-  const [reduceMotion, setReduceMotion] = usePref('llm-agent-reduce-motion', systemReducedMotion());
-  const [voiceDemo, setVoiceDemo] = usePref('llm-agent-voice-demo', false);
+  const [mode3d, setMode3d] = usePref('jarvis-3d', true);
+  const [reduceMotion, setReduceMotion] = usePref('jarvis-reduce-motion', systemReducedMotion());
+  const [voiceDemo, setVoiceDemo] = usePref('jarvis-voice-demo', false);
   const use3d = webgl && mode3d;
   const settings = { webgl, mode3d, reduceMotion, voiceDemo };
   const toggles = {
@@ -3360,9 +3360,9 @@ Na seção `## Interface` do `README.md`, substituir o parágrafo que começa co
 ```markdown
 No modo 3D, o centro é o núcleo do agente: um átomo dourado, com prótons, nêutrons e elétrons. Parado, ele está "frio"; quando o agente fala (etapa de voz), ele "esquenta": as partículas vibram, as órbitas tremem e os elétrons aceleram. Ligue **Demonstração de voz** para ver. À direita, de cima para baixo, ficam os cartões da área em que você está: Você, Projetos, Skills e Sessões abertas no início; dentro de um projeto, Sobre o projeto, Conversas, Memória, Instruções, git e os botões de nova sessão. Clicar num cartão abre os detalhes ou entra no nível seguinte; a trilha no topo mostra onde você está, e `Esc` volta.
 
-Os botões **+ Sobre mim**, **+ Nova skill** e **+ Novo projeto** abrem uma sessão do Claude já instruída para a tarefa: registrar uma informação sobre você, criar uma skill ou preparar um projeto novo. As duas primeiras rodam numa pasta de trabalho própria (`~/.local/share/llm-agent/workspace`); o projeto novo é criado ao lado dos seus outros projetos (ou em `LLM_AGENT_PROJECTS_DIR`).
+Os botões **+ Sobre mim**, **+ Nova skill** e **+ Novo projeto** abrem uma sessão do Claude já instruída para a tarefa: registrar uma informação sobre você, criar uma skill ou preparar um projeto novo. As duas primeiras rodam numa pasta de trabalho própria (`~/.local/share/jarvis/workspace`); o projeto novo é criado ao lado dos seus outros projetos (ou em `JARVIS_PROJECTS_DIR`).
 
-À esquerda fica o painel do dia: hora, data, clima e as principais notícias. O clima vem do [Open-Meteo](https://open-meteo.com/) (sem cadastro), usando a localização do navegador; para usar uma cidade fixa, defina `LLM_AGENT_UI_CITY` (por exemplo, `LLM_AGENT_UI_CITY="São Paulo" llm-agent ui`). As notícias vêm do RSS do Google Notícias; `LLM_AGENT_UI_NEWS_RSS` troca a fonte. As coordenadas são enviadas ao Open-Meteo para buscar a previsão.
+À esquerda fica o painel do dia: hora, data, clima e as principais notícias. O clima vem do [Open-Meteo](https://open-meteo.com/) (sem cadastro), usando a localização do navegador; para usar uma cidade fixa, defina `JARVIS_UI_CITY` (por exemplo, `JARVIS_UI_CITY="São Paulo" jarvis ui`). As notícias vêm do RSS do Google Notícias; `JARVIS_UI_NEWS_RSS` troca a fonte. As coordenadas são enviadas ao Open-Meteo para buscar a previsão.
 
 Na barra da esquerda, **Modo 3D** troca para a interface em lista e **Reduzir movimento** congela as animações. Em GPUs mais fracas, a cena reduz a qualidade sozinha.
 ```
@@ -3374,7 +3374,7 @@ Expected: sem erros de tipo; testes da UI e do servidor passando; build com o ch
 
 - [ ] **Step 7: Verificação manual (usuário)**
 
-Run (no host WSL): `rm -rf app/web/dist; llm-agent ui --stop; llm-agent ui` e abrir a URL (aceitar o pedido de localização).
+Run (no host WSL): `rm -rf app/web/dist; jarvis ui --stop; jarvis ui` e abrir a URL (aceitar o pedido de localização).
 Expected:
 1. Átomo dourado com prótons, nêutrons e três órbitas; sem brilho de fundo.
 2. "Demonstração de voz": parado no "aguardando"; agitação crescente em "ouvindo" e "pensando"; em "falando", partículas vibrando e órbitas tremendo conforme a voz.
