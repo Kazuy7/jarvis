@@ -39,7 +39,7 @@ livre (outros pedidos, outros assuntos) enquanto a sessão de evolução trabalh
 - "Jarvis, vamos desenvolver uma funcionalidade nova para você" inicia a definição. O Jarvis conduz:
   - pergunta uma coisa por vez (no máximo 4 ou 5): o que dispara, o que ele deve dizer ou fazer, onde aparece na tela, casos de borda;
   - o usuário responde, muda de ideia ou fala de outras coisas no meio. A proposta fica guardada e não se perde ao trocar de assunto nem ao reiniciar.
-- Ferramenta `rascunhar_evolucao({ titulo, especificacao })`: grava ou atualiza a proposta (estado `rascunho`) em `~/.config/llm-agent/ui/evolution.json`.
+- Ferramenta `rascunhar_evolucao({ titulo, especificacao })`: grava ou atualiza a proposta (estado `rascunho`) em `~/.config/jarvis/ui/evolution.json`.
   - A especificação é um texto estruturado (objetivo, comportamento, onde aparece, casos de borda, fora do escopo) e é exatamente o que a sessão de desenvolvimento vai receber.
 
 **2. Primeiro OK ("está tudo ok, pode seguir")**
@@ -51,7 +51,7 @@ livre (outros pedidos, outros assuntos) enquanto a sessão de evolução trabalh
 - Mudanças depois do resumo (`rascunhar_evolucao`) voltam a proposta para `rascunho`, e o resumo é relido.
 
 **4. Desenvolvimento em background**
-- Cria um **clone local** do repositório em `~/.local/share/llm-agent/jarvis-dev/<slug>`, com `git clone --local` e uma branch `jarvis/<slug>` a partir do commit atual.
+- Cria um **clone local** do repositório em `~/.local/share/jarvis/jarvis-dev/<slug>`, com `git clone --local` e uma branch `jarvis/<slug>` a partir do commit atual.
   - Por que não uma git worktree: os agentes rodam no container, que monta só a pasta do projeto. O `.git` de uma worktree aponta para fora dela, e o git quebraria lá dentro. O clone é autocontido.
 - Abre nesse clone uma sessão do Claude (não vai para a tela). O prompt traz a especificação aprovada e a orientação: "siga o CLAUDE.md; não pare para perguntar: decida pelo mais simples e anote as decisões; rode todas as verificações, faça commits na branch e termine com um resumo de 1–2 frases em `.jarvis/summary.txt`" (pasta ignorada pelo git).
 - O Jarvis responde curto ("Comecei, te aviso quando terminar") e segue conversando normalmente sobre qualquer assunto.
@@ -73,7 +73,7 @@ livre (outros pedidos, outros assuntos) enquanto a sessão de evolução trabalh
 - se a branch mexer em `app/desktop`: "a parte do app desktop só vale com um instalador novo". Nesse caso, ele também faz push da branch para o CI gerar o instalador.
 
 *Aplicação:*
-- grava `~/.config/llm-agent/ui/update.json` com `{ from, to, summary, startedAt }`;
+- grava `~/.config/jarvis/ui/update.json` com `{ from, to, summary, startedAt }`;
 - faz `git merge --ff-only` (ou um merge sem conflito) da branch no repositório principal;
 - compila a web;
 - dispara o reinício (passo 7) num processo separado (`setsid`).
@@ -116,7 +116,7 @@ O Jarvis guarda o que aprende sobre o usuário, os projetos e as conversas, e us
 de reiniciar.
 
 ### Armazenamento
-- `~/.config/llm-agent/ui/jarvis-memory.json` (0600): `{ facts: Fact[], conversations: Summary[] }`.
+- `~/.config/jarvis/ui/jarvis-memory.json` (0600): `{ facts: Fact[], conversations: Summary[] }`.
 - `Fact = { id, about: 'usuario' | 'projeto' | 'preferencia' | 'pessoa' | 'outro', project?: string, text, created, updated }`.
   - Limite de 300; ao passar, saem os mais antigos não atualizados.
 - `Summary = { at, text }`, com as últimas 20 conversas (uma frase cada).

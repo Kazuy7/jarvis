@@ -59,9 +59,9 @@ RUN apt-get update \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# Versoes instaladas, lidas pelo llm-agent para checar atualizacoes.
-LABEL llm-agent.claude-code="${CLAUDE_CODE_VERSION}" \
-      llm-agent.codex="${CODEX_VERSION}"
+# Versoes instaladas, lidas pelo jarvis para checar atualizacoes.
+LABEL jarvis.claude-code="${CLAUDE_CODE_VERSION}" \
+      jarvis.codex="${CODEX_VERSION}"
 
 USER agent
 WORKDIR /workspace

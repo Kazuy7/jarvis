@@ -1,5 +1,5 @@
 // Envio de e-mail minimo (SMTP), so para o codigo de recuperacao da senha da voz.
-// Configurado por LLM_AGENT_SMTP_URL: smtps://usuario:senha@smtp.gmail.com:465 (TLS direto)
+// Configurado por JARVIS_SMTP_URL: smtps://usuario:senha@smtp.gmail.com:465 (TLS direto)
 // ou smtp://usuario:senha@host:587 (STARTTLS; sem TLS so para o proprio PC).
 import { connect as tcpConnect, type Socket } from 'node:net';
 import { connect as tlsConnect, type TLSSocket } from 'node:tls';

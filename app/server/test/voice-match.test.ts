@@ -4,13 +4,13 @@ import { findProject, resolveProject } from '../src/voice/tools.ts';
 import type { ProjectSummary } from '../src/types.ts';
 
 const p = (name: string): ProjectSummary => ({ id: name, name, path: `/w/${name}`, updatedAt: '', conversations: 1, agents: ['claude'] });
-const list = ['Nowcasting', 'Nowcasting-Geoserver', 'Nowcasting-Geoserver-API', 'meu-app', 'agendarse', 'llm-agents-docker'].map(p);
+const list = ['Nowcasting', 'Nowcasting-Geoserver', 'Nowcasting-Geoserver-API', 'meu-app', 'agendarse', 'jarvis-agents-docker'].map(p);
 
 test('nomes falados com espacos, hifens e caixa diferentes', () => {
   assert.equal(findProject(list, 'now casting geo server')?.name, 'Nowcasting-Geoserver');
   assert.equal(findProject(list, 'Nowcasting Geoserver API')?.name, 'Nowcasting-Geoserver-API');
   assert.equal(findProject(list, 'o projeto nowcasting')?.name, 'Nowcasting');
-  assert.equal(findProject(list, 'LLM agents docker')?.name, 'llm-agents-docker');
+  assert.equal(findProject(list, 'jarvis agents docker')?.name, 'jarvis-agents-docker');
   assert.equal(findProject(list, 'meu app')?.name, 'meu-app');
 });
 

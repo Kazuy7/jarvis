@@ -271,7 +271,7 @@ export class SpeakerProfileStore implements SpeakerCheck {
     const p = this.profile;
     if (!p) return { error: 'Nenhuma voz cadastrada.' };
     if (!p.email) return { error: 'Nenhum e-mail cadastrado: recupere pela voz.' };
-    if (!this.deps.mailer) return { error: 'O envio de e-mail não está configurado (LLM_AGENT_SMTP_URL): recupere pela voz.' };
+    if (!this.deps.mailer) return { error: 'O envio de e-mail não está configurado (JARVIS_SMTP_URL): recupere pela voz.' };
     if (this.now() - this.lastEmail < EMAIL_EVERY_MS) return { error: 'Já enviei um código há pouco; espere um minuto.' };
     const code = String(randomInt(0, 1_000_000)).padStart(6, '0');
     this.lastEmail = this.now();

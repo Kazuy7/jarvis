@@ -2,9 +2,9 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** `llm-agent ui` sobe um servidor local e imprime uma URL. Nela, uma UI web mostra perfil, skills, projetos e conversas, e abre, retoma e alterna sessões de Claude Code, Codex e shell em terminais embutidos.
+**Goal:** `jarvis ui` sobe um servidor local e imprime uma URL. Nela, uma UI web mostra perfil, skills, projetos e conversas, e abre, retoma e alterna sessões de Claude Code, Codex e shell em terminais embutidos.
 
-**Architecture:** Servidor Node (TypeScript executado direto, sem build) em `app/server`. Ele tem leitores somente leitura de `~/.claude` e `~/.codex`, API HTTP e WebSocket protegidos por token, e um gerenciador de PTYs que executa o `llm-agent`. A UI em React, Vite e xterm.js fica em `app/web`, e o build é servido pelo próprio servidor. Um script `app/ui.sh` (chamado por `llm-agent ui`) sobe, reaproveita e encerra o servidor.
+**Architecture:** Servidor Node (TypeScript executado direto, sem build) em `app/server`. Ele tem leitores somente leitura de `~/.claude` e `~/.codex`, API HTTP e WebSocket protegidos por token, e um gerenciador de PTYs que executa o `jarvis`. A UI em React, Vite e xterm.js fica em `app/web`, e o build é servido pelo próprio servidor. Um script `app/ui.sh` (chamado por `jarvis ui`) sobe, reaproveita e encerra o servidor.
 
 **Tech Stack:** Node ≥ 22.18 (type stripping), `ws` 8.22.1, `@lydell/node-pty` 1.2.0-beta.18 (binários prontos), `node:test`; React 19.3.1, Vite 8.3.5, vitest 5.1.0, `@xterm/xterm` 6.0.0, `react-markdown` 10.1.0; TypeScript 5.9.3 só para checagem de tipos.
 
@@ -12,10 +12,10 @@ Spec: `docs/superpowers/specs/2026-11-02-desktop-app-design.md`
 
 ## Global Constraints
 
-- Servidor escuta só em `127.0.0.1`; porta `LLM_AGENT_UI_PORT`, padrão `7777`.
-- Token: 32 bytes aleatórios em base64url, em `<stateDir>/token` com permissão `600`; `stateDir` = `LLM_AGENT_UI_STATE_DIR` ou `${XDG_CONFIG_HOME:-$HOME/.config}/llm-agent/ui`.
+- Servidor escuta só em `127.0.0.1`; porta `JARVIS_UI_PORT`, padrão `7777`.
+- Token: 32 bytes aleatórios em base64url, em `<stateDir>/token` com permissão `600`; `stateDir` = `JARVIS_UI_STATE_DIR` ou `${XDG_CONFIG_HOME:-$HOME/.config}/jarvis/ui`.
 - `/api/*` (exceto `/api/health`) exige `Authorization: Bearer <token>`; WebSocket em `/ws?token=<token>`.
-- `Origin` permitido: ausente, `http://127.0.0.1:<porta>`, `http://localhost:<porta>` e os de `LLM_AGENT_UI_ORIGINS` (vírgulas).
+- `Origin` permitido: ausente, `http://127.0.0.1:<porta>`, `http://localhost:<porta>` e os de `JARVIS_UI_ORIGINS` (vírgulas).
 - Arquivos de texto enviados até 64 KB (`truncated: true` quando cortados).
 - Títulos cortados em 80 caracteres (79 + `…`); sem título: `(sem título)`.
 - Histórico por sessão: últimos 1 MB.
@@ -42,7 +42,7 @@ Cada bloco de código marcado com `file=<caminho>` é o conteúdo **completo** d
 
 ```json file=app/server/package.json
 {
-  "name": "llm-agent-ui-server",
+  "name": "jarvis-ui-server",
   "private": true,
   "type": "module",
   "engines": { "node": ">=22.18" },
@@ -180,7 +180,7 @@ import { tmpdir } from 'node:os';
 import { join, dirname } from 'node:path';
 
 export function tempHome(): string {
-  return realpathSync(mkdtempSync(join(tmpdir(), 'llm-agent-ui-')));
+  return realpathSync(mkdtempSync(join(tmpdir(), 'jarvis-ui-')));
 }
 
 export function write(file: string, content: string, mtime?: Date): void {
@@ -1123,7 +1123,7 @@ export interface AppOptions {
   port: number;
   token: string;
   webDir: string;
-  /** Caminho do llm-agent executado pelos terminais. */
+  /** Caminho do jarvis executado pelos terminais. */
   bin: string;
   extraOrigins: string[];
 }
@@ -1244,9 +1244,9 @@ import { buildFixture } from './fixture.ts';
 import { startApp } from './app.ts';
 import { tempHome, waitFor, write } from './helpers.ts';
 
-/** llm-agent falso: mostra argumentos e projeto, le uma linha e sai com 3. */
+/** jarvis falso: mostra argumentos e projeto, le uma linha e sai com 3. */
 function fakeAgent(dir: string): string {
-  const bin = join(dir, 'fake-llm-agent');
+  const bin = join(dir, 'fake-jarvis');
   write(bin, '#!/usr/bin/env bash\necho "ARGS:$*"\necho "WORKDIR:$AGENT_WORKDIR"\nIFS= read -r line\necho "GOT:$line"\nexit 3\n');
   chmodSync(bin, 0o755);
   return bin;
@@ -1260,7 +1260,7 @@ test('agentArgs monta os comandos de cada agente', () => {
   assert.deepEqual(agentArgs('shell'), ['zsh']);
 });
 
-test('TerminalManager executa o llm-agent no projeto e guarda o historico', async () => {
+test('TerminalManager executa o jarvis no projeto e guarda o historico', async () => {
   const home = tempHome();
   const proj = join(home, 'proj');
   mkdirSync(proj);
@@ -1373,7 +1373,7 @@ import nodePty from '@lydell/node-pty';
 import type { IPty } from '@lydell/node-pty';
 import type { SessionAgent, SessionInfo } from './types.ts';
 
-/** Argumentos do llm-agent para cada agente, no modo autonomo do menu. */
+/** Argumentos do jarvis para cada agente, no modo autonomo do menu. */
 export function agentArgs(agent: SessionAgent, resume?: string): string[] {
   switch (agent) {
     case 'claude':
@@ -1502,7 +1502,7 @@ export interface AppOptions {
   port: number;
   token: string;
   webDir: string;
-  /** Caminho do llm-agent executado pelos terminais. */
+  /** Caminho do jarvis executado pelos terminais. */
   bin: string;
   extraOrigins: string[];
 }
@@ -1688,15 +1688,15 @@ git commit -m "Run agent sessions in PTYs over a WebSocket"
 
 ---
 
-### Task 6: Processo do servidor, observador de arquivos e `llm-agent ui`
+### Task 6: Processo do servidor, observador de arquivos e `jarvis ui`
 
 **Files:**
 - Create: `app/server/src/watch.ts`, `app/server/src/main.ts`, `app/server/test/watch.test.ts`, `app/ui.sh`, `tests/ui.test.sh`
-- Modify: `llm-agent` (cabeçalho de uso e despacho do subcomando `ui`)
+- Modify: `jarvis` (cabeçalho de uso e despacho do subcomando `ui`)
 
 **Interfaces:**
 - Consumes: `createApp`, `loadOrCreateToken`.
-- Produces: `watchPaths(paths, onChange, delay?): () => void`; comando `llm-agent ui [--stop]` (última linha da saída: a URL); `server.json` com `{"pid":N,"port":N}` em `stateDir`; variáveis `LLM_AGENT_UI_PORT`, `LLM_AGENT_UI_STATE_DIR`, `LLM_AGENT_UI_ORIGINS`, `LLM_AGENT_UI_NO_BUILD`, `LLM_AGENT_BIN`.
+- Produces: `watchPaths(paths, onChange, delay?): () => void`; comando `jarvis ui [--stop]` (última linha da saída: a URL); `server.json` com `{"pid":N,"port":N}` em `stateDir`; variáveis `JARVIS_UI_PORT`, `JARVIS_UI_STATE_DIR`, `JARVIS_UI_ORIGINS`, `JARVIS_UI_NO_BUILD`, `JARVIS_BIN`.
 
 - [ ] **Step 1: Testes do observador e do comando**
 
@@ -1725,7 +1725,7 @@ test('watchPaths agrupa eventos e ignora caminhos inexistentes', async () => {
 
 ```bash file=tests/ui.test.sh
 #!/usr/bin/env bash
-# Testa o "llm-agent ui": sobe o servidor, reaproveita, protege a API e encerra.
+# Testa o "jarvis ui": sobe o servidor, reaproveita, protege a API e encerra.
 # Requer Node >= 22.18 e "npm ci" ja executado em app/server.
 set -uo pipefail
 
@@ -1736,14 +1736,14 @@ if [ ! -d "$repo/app/server/node_modules" ]; then
 fi
 
 work="$(mktemp -d)"
-export HOME="$work/home" XDG_CONFIG_HOME="$work/home/.config" LLM_AGENT_UI_NO_BUILD=1
-LLM_AGENT_UI_PORT="$(node -e 'const s=require("net").createServer();s.listen(0,"127.0.0.1",()=>{console.log(s.address().port);s.close()})')"
-export LLM_AGENT_UI_PORT
+export HOME="$work/home" XDG_CONFIG_HOME="$work/home/.config" JARVIS_UI_NO_BUILD=1
+JARVIS_UI_PORT="$(node -e 'const s=require("net").createServer();s.listen(0,"127.0.0.1",()=>{console.log(s.address().port);s.close()})')"
+export JARVIS_UI_PORT
 mkdir -p "$HOME"
-state="$XDG_CONFIG_HOME/llm-agent/ui"
-base="http://127.0.0.1:$LLM_AGENT_UI_PORT"
+state="$XDG_CONFIG_HOME/jarvis/ui"
+base="http://127.0.0.1:$JARVIS_UI_PORT"
 cleanup() {
-  "$repo/llm-agent" ui --stop >/dev/null 2>&1
+  "$repo/jarvis" ui --stop >/dev/null 2>&1
   rm -rf "$work"
 }
 trap cleanup EXIT
@@ -1761,7 +1761,7 @@ check() { # descricao esperado obtido
 }
 server_pid() { grep -o '"pid":[0-9]*' "$state/server.json" 2>/dev/null | cut -d: -f2; }
 
-url="$("$repo/llm-agent" ui | tail -n 1)"
+url="$("$repo/jarvis" ui | tail -n 1)"
 token="$(cat "$state/token" 2>/dev/null)"
 check "imprime a URL com o token" "$base/#token=$token" "$url"
 check "token tem permissao 600" "600" "$(stat -c %a "$state/token" 2>/dev/null)"
@@ -1770,10 +1770,10 @@ check "API sem token: 401" "401" "$(curl -s -o /dev/null -w '%{http_code}' "$bas
 check "API com token: 200" "200" "$(curl -s -o /dev/null -w '%{http_code}' -H "Authorization: Bearer $token" "$base/api/overview")"
 
 pid1="$(server_pid)"
-"$repo/llm-agent" ui >/dev/null
+"$repo/jarvis" ui >/dev/null
 check "reaproveita o servidor" "$pid1" "$(server_pid)"
 
-"$repo/llm-agent" ui --stop >/dev/null
+"$repo/jarvis" ui --stop >/dev/null
 check "--stop encerra" "parado" "$(curl -fsS --max-time 1 "$base/api/health" >/dev/null 2>&1 && echo rodando || echo parado)"
 check "--stop remove o server.json" "nao" "$([ -e "$state/server.json" ] && echo sim || echo nao)"
 
@@ -1787,7 +1787,7 @@ chmod +x tests/ui.test.sh
 - [ ] **Step 2: Ver falhar**
 
 Run: `(cd app/server && npm test) ; tests/ui.test.sh`
-Expected: `watch.test.ts` falha com `Cannot find module '.../src/watch.ts'`; `tests/ui.test.sh` falha em "imprime a URL com o token" (o `llm-agent` ainda não conhece `ui`).
+Expected: `watch.test.ts` falha com `Cannot find module '.../src/watch.ts'`; `tests/ui.test.sh` falha em "imprime a URL com o token" (o `jarvis` ainda não conhece `ui`).
 
 - [ ] **Step 3: Implementar o observador e o processo do servidor**
 
@@ -1821,7 +1821,7 @@ export function watchPaths(paths: string[], onChange: () => void, delay = 500): 
 ```
 
 ```ts file=app/server/src/main.ts
-// Processo do servidor da interface. Normalmente iniciado por "llm-agent ui".
+// Processo do servidor da interface. Normalmente iniciado por "jarvis ui".
 import { rmSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { createApp } from './server.ts';
@@ -1830,22 +1830,22 @@ import { watchPaths } from './watch.ts';
 
 const home = process.env.HOME;
 if (!home) {
-  console.error('llm-agent ui: HOME nao definido');
+  console.error('jarvis ui: HOME nao definido');
   process.exit(1);
 }
 
 const repo = resolve(import.meta.dirname, '..', '..', '..');
 const stateDir =
-  process.env.LLM_AGENT_UI_STATE_DIR ?? join(process.env.XDG_CONFIG_HOME ?? join(home, '.config'), 'llm-agent', 'ui');
+  process.env.JARVIS_UI_STATE_DIR ?? join(process.env.XDG_CONFIG_HOME ?? join(home, '.config'), 'jarvis', 'ui');
 const token = loadOrCreateToken(stateDir);
 
 const app = createApp({
   home,
-  port: Number(process.env.LLM_AGENT_UI_PORT ?? 7777),
+  port: Number(process.env.JARVIS_UI_PORT ?? 7777),
   token,
   webDir: join(repo, 'app', 'web', 'dist'),
-  bin: process.env.LLM_AGENT_BIN ?? join(repo, 'llm-agent'),
-  extraOrigins: (process.env.LLM_AGENT_UI_ORIGINS ?? '').split(',').map((s) => s.trim()).filter(Boolean),
+  bin: process.env.JARVIS_BIN ?? join(repo, 'jarvis'),
+  extraOrigins: (process.env.JARVIS_UI_ORIGINS ?? '').split(',').map((s) => s.trim()).filter(Boolean),
 });
 
 const port = await app.listen();
@@ -1861,7 +1861,7 @@ const stopWatching = watchPaths(
   ],
   () => app.broadcast({ type: 'changed' }),
 );
-console.log(`llm-agent ui ouvindo em http://127.0.0.1:${port}`);
+console.log(`jarvis ui ouvindo em http://127.0.0.1:${port}`);
 
 let stopping = false;
 async function stop(): Promise<void> {
@@ -1881,24 +1881,24 @@ process.on('SIGINT', stop);
 ```bash file=app/ui.sh
 #!/usr/bin/env bash
 # Sobe (ou reaproveita) o servidor da interface e imprime a URL de acesso na
-# ultima linha. Chamado por "llm-agent ui".
+# ultima linha. Chamado por "jarvis ui".
 #
 # Uso:
-#   llm-agent ui          sobe ou reaproveita o servidor e imprime a URL
-#   llm-agent ui --stop   encerra o servidor e as sessoes abertas nele
+#   jarvis ui          sobe ou reaproveita o servidor e imprime a URL
+#   jarvis ui --stop   encerra o servidor e as sessoes abertas nele
 #
 # Variaveis:
-#   LLM_AGENT_UI_PORT      porta (padrao: 7777)
-#   LLM_AGENT_UI_ORIGINS   origens extras aceitas, separadas por virgula
+#   JARVIS_UI_PORT      porta (padrao: 7777)
+#   JARVIS_UI_ORIGINS   origens extras aceitas, separadas por virgula
 #                          (ex.: http://localhost:5173 para o "npm run dev")
-#   LLM_AGENT_UI_NO_BUILD=1  nao instala dependencias nem constroi a UI
+#   JARVIS_UI_NO_BUILD=1  nao instala dependencias nem constroi a UI
 set -euo pipefail
 
 app_dir="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" && pwd -P)"
-state_dir="${XDG_CONFIG_HOME:-$HOME/.config}/llm-agent/ui"
+state_dir="${XDG_CONFIG_HOME:-$HOME/.config}/jarvis/ui"
 server_json="$state_dir/server.json"
 log="$state_dir/server.log"
-port="${LLM_AGENT_UI_PORT:-7777}"
+port="${JARVIS_UI_PORT:-7777}"
 mkdir -p "$state_dir"
 chmod 700 "$state_dir"
 
@@ -1927,13 +1927,13 @@ if [ "${1:-}" = "--stop" ]; then
 fi
 
 for cmd in node curl; do
-  command -v "$cmd" >/dev/null || { echo "llm-agent ui: '$cmd' nao encontrado." >&2; exit 1; }
+  command -v "$cmd" >/dev/null || { echo "jarvis ui: '$cmd' nao encontrado." >&2; exit 1; }
 done
 
 if running_pid >/dev/null && healthy "$(json_field port)"; then
   port="$(json_field port)"
 else
-  if [ -z "${LLM_AGENT_UI_NO_BUILD:-}" ]; then
+  if [ -z "${JARVIS_UI_NO_BUILD:-}" ]; then
     if [ ! -d "$app_dir/server/node_modules" ]; then
       echo "Instalando dependencias do servidor..." >&2
       npm --prefix "$app_dir/server" ci --silent >&2
@@ -1944,7 +1944,7 @@ else
       npm --prefix "$app_dir/web" run build --silent >&2
     fi
   fi
-  LLM_AGENT_UI_PORT="$port" LLM_AGENT_UI_STATE_DIR="$state_dir" \
+  JARVIS_UI_PORT="$port" JARVIS_UI_STATE_DIR="$state_dir" \
     setsid nohup node "$app_dir/server/src/main.ts" >>"$log" 2>&1 </dev/null &
   server=$!
   for _ in $(seq 1 50); do
@@ -1953,9 +1953,9 @@ else
     sleep 0.2
   done
   if ! healthy "$port"; then
-    echo "llm-agent ui: o servidor nao subiu. Ultimas linhas de $log:" >&2
+    echo "jarvis ui: o servidor nao subiu. Ultimas linhas de $log:" >&2
     tail -n 20 "$log" >&2
-    echo "Se a porta $port estiver ocupada, use LLM_AGENT_UI_PORT=<outra porta>." >&2
+    echo "Se a porta $port estiver ocupada, use JARVIS_UI_PORT=<outra porta>." >&2
     exit 1
   fi
 fi
@@ -1967,16 +1967,16 @@ echo "http://127.0.0.1:$port/#token=$(cat "$state_dir/token")"
 chmod +x app/ui.sh
 ```
 
-Em `llm-agent`, no cabeçalho de uso, depois da linha `#   llm-agent zsh             abre um shell no container`, inserir:
+Em `jarvis`, no cabeçalho de uso, depois da linha `#   jarvis zsh             abre um shell no container`, inserir:
 
 ```bash
-#   llm-agent ui [--stop]     abre a interface (imprime a URL) ou a encerra
+#   jarvis ui [--stop]     abre a interface (imprime a URL) ou a encerra
 ```
 
-e, depois da linha `#   LLM_AGENT_NO_UPDATE_CHECK=1          nao procura versoes novas ao abrir`, inserir:
+e, depois da linha `#   JARVIS_NO_UPDATE_CHECK=1          nao procura versoes novas ao abrir`, inserir:
 
 ```bash
-#   LLM_AGENT_UI_PORT         porta da interface (padrao: 7777)
+#   JARVIS_UI_PORT         porta da interface (padrao: 7777)
 ```
 
 Logo depois do bloco do `--help` (o `fi` que segue `exit 0`), inserir:
@@ -1991,14 +1991,14 @@ fi
 
 - [ ] **Step 5: Ver passar**
 
-Run: `(cd app/server && npm test && npm run typecheck) && tests/ui.test.sh && tests/remote-control.test.sh 2>/dev/null; bash -n llm-agent app/ui.sh`
+Run: `(cd app/server && npm test && npm run typecheck) && tests/ui.test.sh && tests/remote-control.test.sh 2>/dev/null; bash -n jarvis app/ui.sh`
 Expected: testes do servidor `fail 0`; `tests/ui.test.sh` com 8 `ok` e `todos os testes passaram`; nenhum erro de sintaxe. (`tests/remote-control.test.sh` só existe depois do merge da etapa 1.)
 
 - [ ] **Step 6: Commit**
 
 ```bash
-git add app/server/src/watch.ts app/server/src/main.ts app/server/test/watch.test.ts app/ui.sh tests/ui.test.sh llm-agent
-git commit -m "Add llm-agent ui to start, reuse and stop the UI server"
+git add app/server/src/watch.ts app/server/src/main.ts app/server/test/watch.test.ts app/ui.sh tests/ui.test.sh jarvis
+git commit -m "Add jarvis ui to start, reuse and stop the UI server"
 ```
 
 ---
@@ -2016,7 +2016,7 @@ git commit -m "Add llm-agent ui to start, reuse and stop the UI server"
 
 ```json file=app/web/package.json
 {
-  "name": "llm-agent-ui-web",
+  "name": "jarvis-ui-web",
   "private": true,
   "type": "module",
   "scripts": {
@@ -2066,9 +2066,9 @@ git commit -m "Add llm-agent ui to start, reuse and stop the UI server"
 import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 
-// Em "npm run dev", /api e /ws vao para o servidor do llm-agent ui. Rode o
-// servidor com LLM_AGENT_UI_ORIGINS=http://localhost:5173.
-const target = `http://127.0.0.1:${process.env.LLM_AGENT_UI_PORT ?? 7777}`;
+// Em "npm run dev", /api e /ws vao para o servidor do jarvis ui. Rode o
+// servidor com JARVIS_UI_ORIGINS=http://localhost:5173.
+const target = `http://127.0.0.1:${process.env.JARVIS_UI_PORT ?? 7777}`;
 
 export default defineConfig({
   plugins: [react()],
@@ -2084,7 +2084,7 @@ export default defineConfig({
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="referrer" content="no-referrer" />
-    <title>llm-agent</title>
+    <title>jarvis</title>
   </head>
   <body>
     <div id="root"></div>
@@ -2115,12 +2115,12 @@ describe('takeToken', () => {
     const storage = memoryStorage();
     const replace = vi.fn();
     expect(takeToken({ hash: '#token=abc%2D1', pathname: '/', search: '?x=1' }, storage, replace)).toBe('abc-1');
-    expect(storage.getItem('llm-agent-token')).toBe('abc-1');
+    expect(storage.getItem('jarvis-token')).toBe('abc-1');
     expect(replace).toHaveBeenCalledWith('/?x=1');
   });
   it('sem fragmento, usa o token guardado', () => {
     const storage = memoryStorage();
-    storage.setItem('llm-agent-token', 'salvo');
+    storage.setItem('jarvis-token', 'salvo');
     expect(takeToken({ hash: '', pathname: '/', search: '' }, storage, vi.fn())).toBe('salvo');
   });
   it('sem nada, devolve null', () => {
@@ -2294,10 +2294,10 @@ Expected: os três arquivos falham com `Failed to load url ../src/api.ts` (ou eq
 ```ts file=app/web/src/api.ts
 import type { ClientMessage, Overview, ProjectDetail, ServerMessage } from './types.ts';
 
-const TOKEN_KEY = 'llm-agent-token';
+const TOKEN_KEY = 'jarvis-token';
 
 /**
- * Token vindo de "#token=..." (impresso pelo llm-agent ui). Fica no
+ * Token vindo de "#token=..." (impresso pelo jarvis ui). Fica no
  * sessionStorage e sai da barra de enderecos.
  */
 export function takeToken(
@@ -2690,7 +2690,7 @@ export function Sidebar({ overview, view, sessions, onSelect }: Props) {
   const cls = (active: boolean) => (active ? 'nav active' : 'nav');
   return (
     <nav className="sidebar">
-      <div className="brand">llm-agent</div>
+      <div className="brand">jarvis</div>
       <button className={cls(view.kind === 'profile')} onClick={() => onSelect({ kind: 'profile' })}>
         Você
       </button>
@@ -3140,7 +3140,7 @@ export function App() {
   if (!token) {
     return (
       <div className="fatal">
-        Abra a interface pela URL impressa por <code>llm-agent ui</code>.
+        Abra a interface pela URL impressa por <code>jarvis ui</code>.
       </div>
     );
   }
@@ -3303,7 +3303,7 @@ Expected: `tsc` sem erros; testes `passed`; `vite build` gera `app/web/dist/inde
 
 - [ ] **Step 5: Verificação manual no navegador**
 
-Run (no host WSL): `llm-agent ui --stop; llm-agent ui`
+Run (no host WSL): `jarvis ui --stop; jarvis ui`
 Expected: a URL impressa abre no navegador do Windows. Conferir:
 1. "Você" mostra o `~/.claude/CLAUDE.md` e as memórias.
 2. "Skills" lista as skills, com filtro por origem.
@@ -3313,7 +3313,7 @@ Expected: a URL impressa abre no navegador do Windows. Conferir:
 6. Com duas abas, `Ctrl+1` e `Ctrl+2` alternam. No navegador, `Ctrl+Tab` é do próprio navegador; no app Tauri (marco 3) funciona.
 7. Recarregar a página (F5): as abas voltam com o conteúdo.
 8. `Ctrl+K` fora do terminal abre a busca; buscar o título de uma conversa e dar Enter retoma a conversa.
-9. `llm-agent ui --stop`: a página mostra "Reconectando ao servidor…"; `llm-agent ui` de novo reconecta sozinha (as abas somem, porque as sessões morreram junto com o servidor).
+9. `jarvis ui --stop`: a página mostra "Reconectando ao servidor…"; `jarvis ui` de novo reconecta sozinha (as abas somem, porque as sessões morreram junto com o servidor).
 
 - [ ] **Step 6: Commit**
 
@@ -3337,7 +3337,7 @@ git commit -m "Add web UI: profile, skills, projects, terminals and search"
 Depois do último item da lista `## Recursos`, inserir:
 
 ```markdown
-- **Interface gráfica** (`llm-agent ui`): perfil, skills, projetos e conversas de todos os seus projetos, com terminais embutidos para abrir, retomar e alternar sessões do Claude Code, do Codex e do shell.
+- **Interface gráfica** (`jarvis ui`): perfil, skills, projetos e conversas de todos os seus projetos, com terminais embutidos para abrir, retomar e alternar sessões do Claude Code, do Codex e do shell.
 ```
 
 - [ ] **Step 2: Seção "Interface"**
@@ -3348,8 +3348,8 @@ Logo antes de `## O que o container enxerga`, inserir:
 ## Interface
 
 ```sh
-llm-agent ui          # sobe a interface e imprime a URL
-llm-agent ui --stop   # encerra a interface e as sessões abertas nela
+jarvis ui          # sobe a interface e imprime a URL
+jarvis ui --stop   # encerra a interface e as sessões abertas nela
 ```
 
 Abra a URL impressa no navegador. No WSL2, ela funciona direto no navegador do Windows. Na primeira execução, o comando instala as dependências e constrói a interface (precisa de Node.js 22.18 ou mais novo no host).
@@ -3360,11 +3360,11 @@ A interface mostra:
 - **Skills:** as skills do Claude Code, dos plugins e do Codex.
 - **Projetos:** todos os projetos em que você já usou o Claude Code ou o Codex, com conversas, memória, instruções e branch do git.
 
-Em cada projeto, os botões **+ Claude**, **+ Codex** e **+ Shell** abrem uma sessão nova, e **Retomar** reabre uma conversa. As sessões rodam no `llm-agent` de sempre, dentro do container, em abas na parte de baixo da tela. Elas continuam rodando se você fechar a página; ao reabrir, as abas voltam com o conteúdo.
+Em cada projeto, os botões **+ Claude**, **+ Codex** e **+ Shell** abrem uma sessão nova, e **Retomar** reabre uma conversa. As sessões rodam no `jarvis` de sempre, dentro do container, em abas na parte de baixo da tela. Elas continuam rodando se você fechar a página; ao reabrir, as abas voltam com o conteúdo.
 
 Atalhos: `Ctrl+1`…`Ctrl+9` vão para uma aba, `Ctrl+Tab` e `Ctrl+Shift+Tab` alternam (no navegador, esses dois são do próprio navegador), `Ctrl+Shift+W` fecha a aba e `Ctrl+K`, fora do terminal, abre a busca.
 
-O servidor escuta só em `127.0.0.1` (porta 7777, ou `LLM_AGENT_UI_PORT`) e exige o token que vai na URL, salvo em `~/.config/llm-agent/ui/token`. Quem tem a URL pode abrir agentes autônomos nos seus projetos, então não a compartilhe.
+O servidor escuta só em `127.0.0.1` (porta 7777, ou `JARVIS_UI_PORT`) e exige o token que vai na URL, salvo em `~/.config/jarvis/ui/token`. Quem tem a URL pode abrir agentes autônomos nos seus projetos, então não a compartilhe.
 ````
 
 - [ ] **Step 3: Seção "Desenvolvimento"**
@@ -3386,19 +3386,19 @@ npm --prefix app/web test                 # lógica da interface
 Para mexer na interface com recarga automática:
 
 ```sh
-LLM_AGENT_UI_ORIGINS=http://localhost:5173 llm-agent ui   # copie o token da URL
+JARVIS_UI_ORIGINS=http://localhost:5173 jarvis ui   # copie o token da URL
 npm --prefix app/web run dev                              # abra http://localhost:5173/#token=<token>
 ```
 ````
 
 - [ ] **Step 4: Conferir**
 
-Run: `grep -n -E "^## Interface|llm-agent ui|LLM_AGENT_UI_ORIGINS" README.md`
+Run: `grep -n -E "^## Interface|jarvis ui|JARVIS_UI_ORIGINS" README.md`
 Expected: o título `## Interface` e as linhas dos comandos.
 
 - [ ] **Step 5: Commit**
 
 ```bash
 git add README.md
-git commit -m "Document the llm-agent ui interface"
+git commit -m "Document the jarvis ui interface"
 ```

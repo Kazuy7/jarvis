@@ -1,5 +1,5 @@
 {
-  "name": "llm-agent-desktop",
+  "name": "jarvis-desktop",
   "private": true,
   "scripts": {
     "tauri": "tauri",

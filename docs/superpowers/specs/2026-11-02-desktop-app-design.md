@@ -5,19 +5,19 @@ Status: aprovado
 
 ## Contexto
 
-Este é o segundo de três subprojetos rumo a um assistente estilo "Jarvis" sobre o `llm-agent`:
+Este é o segundo de três subprojetos rumo a um assistente estilo "Jarvis" sobre o `jarvis`:
 
 1. Remote Control automático ao abrir o Claude Code (spec `2026-11-02-remote-control-design.md`).
 2. **App desktop** (este spec).
 3. Voz: palavra de ativação, conversa contínua até "tchau" e tarefas em background.
 
-O app é um ponto central para todos os projetos. Ele mostra o que os agentes sabem sobre o usuário (instruções globais e memórias), as skills instaladas, os projetos e as conversas de cada um, em cartões dispostos em volta de um núcleo animado que representa a voz do agente. Ele também abre, retoma e alterna sessões do Claude Code, do Codex e de um shell, em terminais embutidos que rodam o `llm-agent` de sempre.
+O app é um ponto central para todos os projetos. Ele mostra o que os agentes sabem sobre o usuário (instruções globais e memórias), as skills instaladas, os projetos e as conversas de cada um, em cartões dispostos em volta de um núcleo animado que representa a voz do agente. Ele também abre, retoma e alterna sessões do Claude Code, do Codex e de um shell, em terminais embutidos que rodam o `jarvis` de sempre.
 
 ## Decisões
 
 - **Casca:** Tauri 2, nativo no Windows. Sob o WSLg, o WebGL é lento e o microfone (etapa 3) é instável.
 - **Interface:** web (React, react-three-fiber, xterm.js), servida pelo servidor local. A mesma UI abre no navegador durante o desenvolvimento.
-- **Servidor:** Node e TypeScript no WSL, com o usuário do host, fora do container. Ele lê `~/.claude` e `~/.codex` e abre terminais que executam o `llm-agent`.
+- **Servidor:** Node e TypeScript no WSL, com o usuário do host, fora do container. Ele lê `~/.claude` e `~/.codex` e abre terminais que executam o `jarvis`.
 - **Terminal embutido** em vez de chat próprio. As sessões continuam interativas e cobertas pelo plano da assinatura, e Claude Code e Codex funcionam exatamente como no terminal.
 - **Todos os projetos**, não um por vez.
 - **Somente leitura** para memórias, instruções e skills: o app não edita arquivos. Criar skills, registrar informações sobre o usuário e preparar projetos novos é feito por sessões do Claude abertas pelos botões "+".
@@ -27,11 +27,11 @@ O app é um ponto central para todos os projetos. Ele mostra o que os agentes sa
 ```
 Windows                                  WSL2 (usuário do host, fora do container)
 ┌──────────────────────────────┐         ┌──────────────────────────────────────┐
-│ App Tauri                    │  http   │ Servidor (`llm-agent ui`)            │
+│ App Tauri                    │  http   │ Servidor (`jarvis ui`)            │
 │ - ao abrir: wsl.exe →        │  + ws   │ - leitores: perfil, skills,          │
-│   `llm-agent ui --url`       │◄───────►│   projetos, conversas                │
+│   `jarvis ui --url`       │◄───────►│   projetos, conversas                │
 │ - carrega a URL retornada    │127.0.0.1│ - observa o disco, avisa a UI        │
-└──────────────────────────────┘ + token │ - terminais (PTY) → llm-agent        │
+└──────────────────────────────┘ + token │ - terminais (PTY) → jarvis        │
                                          └──────────────────────────────────────┘
 ```
 
@@ -46,14 +46,14 @@ Estrutura no repositório:
 
 Dependências do servidor: `ws` e `@lydell/node-pty`. Este fork do `node-pty` traz binários prontos, então não precisa de compilador C++ no WSL. O `node-pty` original exige `g++` e `make`.
 
-## Comando `llm-agent ui`
+## Comando `jarvis ui`
 
-- `llm-agent ui`: garante que o servidor está rodando e imprime a URL de acesso (`http://127.0.0.1:<porta>/#token=<token>`).
-  - Se `~/.config/llm-agent/ui/server.json` aponta para um processo vivo e `GET /api/health` responde, reaproveita esse servidor.
-  - Senão, sobe o servidor em background (`nohup node app/server/src/main.ts`), com log em `~/.config/llm-agent/ui/server.log`, e espera o health responder por até 10 s.
+- `jarvis ui`: garante que o servidor está rodando e imprime a URL de acesso (`http://127.0.0.1:<porta>/#token=<token>`).
+  - Se `~/.config/jarvis/ui/server.json` aponta para um processo vivo e `GET /api/health` responde, reaproveita esse servidor.
+  - Senão, sobe o servidor em background (`nohup node app/server/src/main.ts`), com log em `~/.config/jarvis/ui/server.log`, e espera o health responder por até 10 s.
   - Na primeira execução, se faltar `app/server/node_modules` ou `app/web/dist`, roda `npm ci` (e o build da UI) antes, avisando o usuário.
-- `llm-agent ui --stop`: encerra o servidor e todas as sessões abertas nele.
-- Porta: `LLM_AGENT_UI_PORT`, padrão `7777`.
+- `jarvis ui --stop`: encerra o servidor e todas as sessões abertas nele.
+- Porta: `JARVIS_UI_PORT`, padrão `7777`.
 - O subcomando roda no host. Não chama o Docker e não exige estar dentro de um projeto.
 
 ## Dados lidos
@@ -112,7 +112,7 @@ WebSocket em `/ws?token=<token>` (navegadores não mandam cabeçalhos no WebSock
 
 ## Terminais
 
-- Cada sessão é um PTY (`xterm-256color`) que executa `<repo>/llm-agent <args>` com `AGENT_WORKDIR=<projectPath>` e `cwd=<projectPath>`.
+- Cada sessão é um PTY (`xterm-256color`) que executa `<repo>/jarvis <args>` com `AGENT_WORKDIR=<projectPath>` e `cwd=<projectPath>`.
 - Argumentos, no modo autônomo do menu atual:
 
 | Agente | Nova | Retomar |
@@ -121,11 +121,11 @@ WebSocket em `/ws?token=<token>` (navegadores não mandam cabeçalhos no WebSock
 | codex | `codex --dangerously-bypass-approvals-and-sandbox` | `codex resume --dangerously-bypass-approvals-and-sandbox <id>` |
 | shell | `zsh` | — |
 
-- O Claude sobe com Remote Control porque o `llm-agent` acrescenta a flag (etapa 1).
+- O Claude sobe com Remote Control porque o `jarvis` acrescenta a flag (etapa 1).
 - O servidor guarda os últimos 1 MB de saída de cada sessão. No `attach`, responde com `history`, e a UI limpa o terminal antes de escrevê-lo. Assim as sessões sobrevivem a fechar e reabrir a janela.
 - Quando o processo termina, a sessão fica marcada como `alive: false` até o usuário fechar a aba.
-- `llm-agent ui --stop` ou o fim do servidor encerram os PTYs. As conversas continuam retomáveis por `--resume`.
-- `LLM_AGENT_BIN` substitui o caminho do `llm-agent` (usado nos testes).
+- `jarvis ui --stop` ou o fim do servidor encerram os PTYs. As conversas continuam retomáveis por `--resume`.
+- `JARVIS_BIN` substitui o caminho do `jarvis` (usado nos testes).
 
 ## Interface
 
@@ -146,7 +146,7 @@ Revisado duas vezes depois de avaliações do usuário. A primeira versão (bura
 - **Voz como temperatura:** o sinal `{ mode, level }` vira um "calor" de 0 a 1 (suavizado: esquenta rápido, esfria devagar). Frio (`idle`): núcleo quase parado, órbitas estáveis. Quente (`speaking`, conforme o volume; `thinking` e `listening` mornos): prótons e nêutrons vibram, as órbitas tremem, se deformam e precessionam, e os elétrons aceleram. A cor da órbita varia dentro do amarelo conforme o estado. A opção "Demonstração de voz" percorre os estados com um sinal sintético até a etapa 3.
 - **Cartões à direita:** o conteúdo da área atual fica numa coluna em arco à direita do átomo, de cima para baixo, com espaçamento vertical uniforme. Cartão compacto: ponto de cor, nome e, nos cartões do início, a contagem. Detalhes aparecem ao clicar. Cabem de 6 a 18 por página, conforme a altura da tela, com setas de página e campo de filtro nas listas.
 - **Níveis:** Início (Você · Projetos · Skills · Sessões abertas) → Você (instruções e memórias, uma por cartão) · Projetos (um cartão por projeto) → Projeto (Sobre o projeto · Conversas · Memória · Instruções · git · + Claude · + Codex · + Shell) → Conversas (clicar retoma) · Skills · Sessões abertas (clicar foca a aba).
-- **Botões "+" pelo agente:** "+ Sobre mim" (em Você) e "+ Nova skill" (em Skills) abrem uma sessão do Claude, já com a instrução da tarefa, numa pasta de trabalho própria (`${XDG_DATA_HOME:-~/.local/share}/llm-agent/workspace`, fora da lista de projetos). "+ Novo projeto" pede só o nome; o servidor cria a pasta na pasta-base de projetos e abre o Claude nela, instruído a preparar o projeto com o usuário. A pasta-base é `LLM_AGENT_PROJECTS_DIR` ou a pasta-mãe mais comum entre os projetos conhecidos (sem projetos: `~/projetos`). "+ Nova sessão" (em Sessões abertas) leva à lista de projetos.
+- **Botões "+" pelo agente:** "+ Sobre mim" (em Você) e "+ Nova skill" (em Skills) abrem uma sessão do Claude, já com a instrução da tarefa, numa pasta de trabalho própria (`${XDG_DATA_HOME:-~/.local/share}/jarvis/workspace`, fora da lista de projetos). "+ Novo projeto" pede só o nome; o servidor cria a pasta na pasta-base de projetos e abre o Claude nela, instruído a preparar o projeto com o usuário. A pasta-base é `JARVIS_PROJECTS_DIR` ou a pasta-mãe mais comum entre os projetos conhecidos (sem projetos: `~/projetos`). "+ Nova sessão" (em Sessões abertas) leva à lista de projetos.
 - **Painel do dia (coluna esquerda no modo 3D, no lugar do menu):** data e hora (atualizadas a cada segundo), clima (temperatura atual, descrição, máxima e mínima) e as principais notícias do dia, com links. As opções (Modo 3D, Reduzir movimento, Demonstração de voz) ficam no pé do painel. O menu lateral continua no modo lista.
 - **Leitura:** detalhes (projeto, arquivo de memória ou instrução, skill, formulário de novo projeto) abrem num painel à esquerda da área central. `Esc` fecha o painel ou sobe um nível. Trilha clicável no topo. `Ctrl+K` salta para projetos, conversas e skills.
 - **Modelo de navegação puro** (`push`, `back`, `goto`, `jump`, `page`, `filter`), para a etapa 3 controlar a interface por voz.
@@ -154,8 +154,8 @@ Revisado duas vezes depois de avaliações do usuário. A primeira versão (bura
 
 **Dados do painel do dia (servidor)**
 - `GET /api/day?lat=&lon=` (com token) devolve `{ weather, weatherError?, news, newsError? }`.
-- Clima: Open-Meteo (sem chave). Coordenadas vêm da geolocalização do navegador; sem elas, da cidade em `LLM_AGENT_UI_CITY` (geocodificação do Open-Meteo); sem nenhuma, `weather: null` e uma mensagem explicando. Cache de 15 minutos.
-- Notícias: RSS do Google Notícias em português (`LLM_AGENT_UI_NEWS_RSS` troca a fonte), até 8 itens, só links `http(s)`. Cache de 30 minutos.
+- Clima: Open-Meteo (sem chave). Coordenadas vêm da geolocalização do navegador; sem elas, da cidade em `JARVIS_UI_CITY` (geocodificação do Open-Meteo); sem nenhuma, `weather: null` e uma mensagem explicando. Cache de 15 minutos.
+- Notícias: RSS do Google Notícias em português (`JARVIS_UI_NEWS_RSS` troca a fonte), até 8 itens, só links `http(s)`. Cache de 30 minutos.
 - Falhas de rede viram `weatherError`/`newsError`; uma não derruba a outra. Tempo limite de 5 segundos por requisição.
 - O clima envia as coordenadas ao Open-Meteo; o README avisa.
 
@@ -166,7 +166,7 @@ Revisado duas vezes depois de avaliações do usuário. A primeira versão (bura
 - A instrução inicial vai como último argumento do `claude`.
 
 **Marco 3: Tauri**
-- Ao abrir, o app executa `wsl.exe -e bash -lc "llm-agent ui"`, lê a URL da última linha da saída e carrega essa URL na janela.
+- Ao abrir, o app executa `wsl.exe -e bash -lc "jarvis ui"`, lê a URL da última linha da saída e carrega essa URL na janela.
 - Se o comando falhar, mostra a saída de erro e o comando para rodar à mão.
 - O instalador (`.msi`) é gerado no GitHub Actions (`windows-latest`) a cada tag `desktop-v*` e publicado como release.
 
@@ -174,28 +174,28 @@ Revisado duas vezes depois de avaliações do usuário. A primeira versão (bura
 
 O servidor consegue abrir agentes autônomos, então:
 - escuta só em `127.0.0.1`;
-- usa um token de 32 bytes aleatórios, gerado na primeira execução e salvo em `~/.config/llm-agent/ui/token` com permissão `600`. Comparação em tempo constante;
-- recusa (403) requisições HTTP e WebSocket com cabeçalho `Origin` diferente de `http://127.0.0.1:<porta>` e `http://localhost:<porta>`, além das origens extras em `LLM_AGENT_UI_ORIGINS` (separadas por vírgula; usado pelo servidor de desenvolvimento do Vite). Requisições sem `Origin` passam, desde que tenham o token;
+- usa um token de 32 bytes aleatórios, gerado na primeira execução e salvo em `~/.config/jarvis/ui/token` com permissão `600`. Comparação em tempo constante;
+- recusa (403) requisições HTTP e WebSocket com cabeçalho `Origin` diferente de `http://127.0.0.1:<porta>` e `http://localhost:<porta>`, além das origens extras em `JARVIS_UI_ORIGINS` (separadas por vírgula; usado pelo servidor de desenvolvimento do Vite). Requisições sem `Origin` passam, desde que tenham o token;
 - a UI lê o token do fragmento da URL (`#token=`), que não é enviado em requisições nem em `Referer`, guarda-o em `sessionStorage` e remove o fragmento da barra de endereço.
 
 ## Erros
 
-- `llm-agent` falhando (Docker parado, imagem ausente): a saída aparece no terminal da aba e a sessão fica "encerrada".
+- `jarvis` falhando (Docker parado, imagem ausente): a saída aparece no terminal da aba e a sessão fica "encerrada".
 - `.jsonl` corrompido ou arquivo ilegível: ignorado.
 - `projectPath` de um `open` que não está na lista de projetos conhecidos: `error`. Isso impede abrir agentes em pastas arbitrárias, como a home.
-- `resume` de um `open` que não é uma conversa conhecida do mesmo agente e do mesmo projeto: `error`. Isso impede injetar argumentos no `llm-agent`.
-- Porta ocupada por outro programa: `llm-agent ui` mostra o erro do log e sugere `LLM_AGENT_UI_PORT`.
+- `resume` de um `open` que não é uma conversa conhecida do mesmo agente e do mesmo projeto: `error`. Isso impede injetar argumentos no `jarvis`.
+- Porta ocupada por outro programa: `jarvis ui` mostra o erro do log e sugere `JARVIS_UI_PORT`.
 
 ## Testes
 
-- Servidor (`node --test`): leitores com uma `$HOME` falsa de fixtures, incluindo linhas inválidas, caminhos com hífen, conversa sem título e projeto apagado; autenticação (sem token, token errado, `Origin` estranho no HTTP e no WebSocket); terminais com um `llm-agent` falso (`LLM_AGENT_BIN`): argumentos corretos, histórico no `attach`, `exit`, recusa de projeto desconhecido.
-- `llm-agent ui`: teste em bash no estilo de `tests/remote-control.test.sh`, com servidor real numa porta livre e `HOME` falsa (sobe, reaproveita e `--stop`).
+- Servidor (`node --test`): leitores com uma `$HOME` falsa de fixtures, incluindo linhas inválidas, caminhos com hífen, conversa sem título e projeto apagado; autenticação (sem token, token errado, `Origin` estranho no HTTP e no WebSocket); terminais com um `jarvis` falso (`JARVIS_BIN`): argumentos corretos, histórico no `attach`, `exit`, recusa de projeto desconhecido.
+- `jarvis ui`: teste em bash no estilo de `tests/remote-control.test.sh`, com servidor real numa porta livre e `HOME` falsa (sobe, reaproveita e `--stop`).
 - UI (vitest): cliente da API (token, reconexão) e lógica das abas (atalhos, ordem, fechar).
 - Manual: visual do marco 2 e app do marco 3.
 
 ## Ordem de entrega
 
-1. **Marco 1:** servidor, `llm-agent ui` e UI funcional sem 3D. Já é usável no navegador.
+1. **Marco 1:** servidor, `jarvis ui` e UI funcional sem 3D. Já é usável no navegador.
 2. **Marco 2:** núcleo de voz (átomo), cartões à direita e painel do dia.
 3. **Marco 3:** app Tauri e build no GitHub Actions.
 
@@ -214,12 +214,12 @@ A pedido do usuário, o núcleo volta a ser o **buraco negro** (o átomo sai, se
 
 - O buraco negro é a voz do Jarvis: o mesmo sinal `{ mode, level }` vira calor (disco mais turbulento e mais rápido) e o volume da fala se projeta no disco como ondas que saem do centro.
 - Projetos voltam a orbitar como planetas e skills como cinturão de estrelas; a coluna de cartões à direita continua sendo a navegação principal. A câmera fica sempre apontada para o centro (gira e aproxima dentro de limites, sem voar até os planetas). Clicar num planeta faz o mesmo que o cartão do projeto; o projeto em foco mostra as conversas como luas (clicar retoma).
-- Configuração **Planetas** (`llm-agent-planets`, ligada por padrão): esconde planetas e estrelas.
+- Configuração **Planetas** (`jarvis-planets`, ligada por padrão): esconde planetas e estrelas.
 
 ## Marco 3 implementado (Tauri)
 
-- `app/desktop`: projeto Tauri 2. A janela abre numa tela local ("Iniciando o servidor no WSL…"), executa `wsl.exe -e bash -lc "llm-agent ui"` (com `~/.local/bin` no PATH, sem console visível; `JARVIS_WSL_DISTRO` escolhe a distribuição), lê a URL da saída e navega até ela. Falha: volta à tela local com o erro e "Tentar de novo".
+- `app/desktop`: projeto Tauri 2. A janela abre numa tela local ("Iniciando o servidor no WSL…"), executa `wsl.exe -e bash -lc "jarvis ui"` (com `~/.local/bin` no PATH, sem console visível; `JARVIS_WSL_DISTRO` escolhe a distribuição), lê a URL da saída e navega até ela. Falha: volta à tela local com o erro e "Tentar de novo".
 - WebView2 com `--autoplay-policy=no-user-gesture-required` (a voz toca sem clique) e `--use-fake-ui-for-media-stream` (microfone liberado).
 - Bandeja (mostrar, reiniciar o servidor, sair), fechar esconde a janela, atalho global `Ctrl+Alt+J`, instância única.
-- Só a tela local tem acesso ao Tauri (capacidade `default`); a interface remota do llm-agent não.
+- Só a tela local tem acesso ao Tauri (capacidade `default`); a interface remota do jarvis não.
 - `.github/workflows/desktop.yml`: compila em `windows-latest` a cada mudança em `app/desktop` (push e PR), publica artefatos e, em tags `desktop-v*`, um release com `.msi` e `.exe`. Ícones gerados de `src-tauri/app-icon.png` (`tauri icon`).

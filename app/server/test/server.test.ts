@@ -37,7 +37,7 @@ test('API exige token e Origin permitido', async () => {
   const { app, base, port } = await startApp(fx.home);
   try {
     const health = JSON.parse((await httpGet(`${base}/api/health`)).body);
-    assert.deepEqual([health.ok, health.app, health.pid], [true, 'llm-agent-ui', process.pid], 'health diz quem e o servidor');
+    assert.deepEqual([health.ok, health.app, health.pid], [true, 'jarvis-ui', process.pid], 'health diz quem e o servidor');
     assert.equal((await httpGet(`${base}/api/overview`)).status, 401);
     assert.equal((await httpGet(`${base}/api/overview`, { authorization: 'Bearer errado' })).status, 401);
     assert.equal((await httpGet(`${base}/api/overview`, { ...auth, origin: 'http://evil.com' })).status, 403);

@@ -1,4 +1,4 @@
-// Jarvis: janela do llm-agent (Windows e Linux). Ao abrir, executa `llm-agent ui`
+// Jarvis: janela do app (Windows e Linux). Ao abrir, executa `jarvis ui`
 // (no WSL, no Windows; direto, no Linux), le a URL impressa e carrega a
 // interface; fica na bandeja ao fechar.
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
@@ -47,13 +47,13 @@ fn tail(text: &str, lines: usize) -> String {
     all[all.len().saturating_sub(lines)..].join("\n")
 }
 
-/// Executa `llm-agent ui` (com `--stop` antes, ao reiniciar) e devolve a URL.
+/// Executa `jarvis ui` (com `--stop` antes, ao reiniciar) e devolve a URL.
 fn start_server(restart: bool) -> Result<String, String> {
-    let stop = if restart { "llm-agent ui --stop >/dev/null 2>&1; " } else { "" };
+    let stop = if restart { "jarvis ui --stop >/dev/null 2>&1; " } else { "" };
     let script = format!(
         "export PATH=\"$HOME/.local/bin:$PATH\"; \
-         command -v llm-agent >/dev/null || {{ echo 'llm-agent não encontrado no WSL: rode ./install.sh no repositório.' >&2; exit 127; }}; \
-         {stop}llm-agent ui"
+         command -v jarvis >/dev/null || {{ echo 'jarvis não encontrado no WSL: rode ./install.sh no repositório.' >&2; exit 127; }}; \
+         {stop}jarvis ui"
     );
     #[cfg(windows)]
     let mut cmd = {
@@ -88,12 +88,12 @@ fn start_server(restart: bool) -> Result<String, String> {
         .map(str::to_string)
         .ok_or_else(|| {
             let detail = tail(&format!("{stderr}\n{stdout}"), 20);
-            if detail.is_empty() { format!("O llm-agent ui terminou sem imprimir a URL (código {:?}).", out.status.code()) } else { detail }
+            if detail.is_empty() { format!("O jarvis ui terminou sem imprimir a URL (código {:?}).", out.status.code()) } else { detail }
         })
 }
 
 /// Erro que nao impede o app de abrir: vai para jarvis.log, na pasta de logs do app
-/// (no Windows, %LOCALAPPDATA%\dev.llmagent.jarvis\logs).
+/// (no Windows, %LOCALAPPDATA%\dev.jarvis.desktop\logs).
 fn log_error(app: &AppHandle, what: &str, err: impl std::fmt::Display) {
     use std::io::Write;
     let Ok(dir) = app.path().app_log_dir() else { return };
@@ -137,7 +137,7 @@ fn boot(app: AppHandle, restart: bool) {
                     let _ = w.navigate(u);
                 }
             }
-            Err(e) => show_error(&app, &format!("URL inválida do llm-agent ui: {url} ({e})")),
+            Err(e) => show_error(&app, &format!("URL inválida do jarvis ui: {url} ({e})")),
         },
         Err(message) => show_error(&app, &message),
     });

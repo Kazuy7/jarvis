@@ -44,7 +44,7 @@ test('day sem localizacao e com noticias fora do ar: erros separados', async () 
   const service = createDayService({ fetch: fakeFetch({ failNews: true }).impl, newsUrl: 'https://news.example/rss' });
   const d = await service.day();
   assert.equal(d.weather, null);
-  assert.match(d.weatherError ?? '', /LLM_AGENT_UI_CITY/);
+  assert.match(d.weatherError ?? '', /JARVIS_UI_CITY/);
   assert.deepEqual(d.news, []);
   assert.match(d.newsError ?? '', /503/);
 });

@@ -7,17 +7,20 @@
 #   jarvis ui --stop   encerra o servidor e as sessoes abertas nele
 #
 # Variaveis:
-#   LLM_AGENT_UI_PORT      porta (padrao: 7777)
-#   LLM_AGENT_UI_ORIGINS   origens extras aceitas, separadas por virgula
+#   JARVIS_UI_PORT      porta (padrao: 7777)
+#   JARVIS_UI_ORIGINS   origens extras aceitas, separadas por virgula
 #                          (ex.: http://localhost:5173 para o "npm run dev")
-#   LLM_AGENT_UI_NO_BUILD=1  nao instala dependencias nem constroi a UI
+#   JARVIS_UI_NO_BUILD=1  nao instala dependencias nem constroi a UI
 set -euo pipefail
 
 app_dir="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" && pwd -P)"
-state_dir="${XDG_CONFIG_HOME:-$HOME/.config}/llm-agent/ui"
+# shellcheck source=migrate.sh
+. "$app_dir/migrate.sh"
+jarvis_migrate_state
+state_dir="${XDG_CONFIG_HOME:-$HOME/.config}/jarvis/ui"
 server_json="$state_dir/server.json"
 log="$state_dir/server.log"
-port="${LLM_AGENT_UI_PORT:-7777}"
+port="${JARVIS_UI_PORT:-7777}"
 mkdir -p "$state_dir"
 chmod 700 "$state_dir"
 
@@ -29,8 +32,9 @@ running_pid() {
 }
 healthy() { curl -fsS --max-time 2 "http://127.0.0.1:$1/api/health" >/dev/null 2>&1; }
 # Campo numerico do /api/health de um servidor do jarvis ui na porta (vazio se nao for um).
+# llm-agent-ui e o nome que um servidor de antes da troca de nome ainda responde.
 health_field() {
-  curl -fsS --max-time 2 "http://127.0.0.1:$1/api/health" 2>/dev/null | grep '"app":"llm-agent-ui"' | grep -o "\"$2\":[0-9]*" | cut -d: -f2
+  curl -fsS --max-time 2 "http://127.0.0.1:$1/api/health" 2>/dev/null | grep -E '"app":"(jarvis-ui|llm-agent-ui)"' | grep -o "\"$2\":[0-9]*" | cut -d: -f2
 }
 # Encerra um processo; se ele nao sair em 5 s (encerramento travado), forca.
 stop_pid() {
@@ -83,7 +87,7 @@ elif orphan="$(health_field "$port" pid)" && [ -n "$orphan" ]; then
   chmod 600 "$server_json"
   warn_outdated "$port"
 else
-  if [ -z "${LLM_AGENT_UI_NO_BUILD:-}" ]; then
+  if [ -z "${JARVIS_UI_NO_BUILD:-}" ]; then
     # Dependencias de um pacote (server ou web) faltando ou desatualizadas. O npm so grava o
     # node_modules/.package-lock.json no fim da instalacao: uma instalacao interrompida e refeita.
     deps_stale() {
@@ -105,7 +109,7 @@ else
       npm --prefix "$app_dir/web" run build --silent >&2 || { echo "A interface nao compilou. Rode: npm --prefix $app_dir/web run build" >&2; exit 1; }
     fi
   fi
-  LLM_AGENT_UI_PORT="$port" LLM_AGENT_UI_STATE_DIR="$state_dir" \
+  JARVIS_UI_PORT="$port" JARVIS_UI_STATE_DIR="$state_dir" \
     setsid nohup node "$app_dir/server/src/main.ts" >>"$log" 2>&1 </dev/null &
   server=$!
   for _ in $(seq 1 50); do
@@ -116,7 +120,7 @@ else
   if ! healthy "$port"; then
     echo "jarvis ui: o servidor nao subiu. Ultimas linhas de $log:" >&2
     tail -n 20 "$log" >&2
-    echo "Se a porta $port estiver ocupada, use LLM_AGENT_UI_PORT=<outra porta>." >&2
+    echo "Se a porta $port estiver ocupada, use JARVIS_UI_PORT=<outra porta>." >&2
     exit 1
   fi
 fi

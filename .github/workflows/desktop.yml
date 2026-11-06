@@ -121,6 +121,7 @@ jobs:
       - run: bash tests/container-name.test.sh
       - run: bash tests/voice-setup.test.sh
       - run: bash tests/install.test.sh
+      - run: bash tests/migrate.test.sh
 
   version:
     runs-on: ubuntu-latest
@@ -233,5 +234,5 @@ jobs:
             | Ubuntu / Debian | `Jarvis_${{ needs.version.outputs.version }}_amd64.deb` |
             | Outras distribuições Linux | `Jarvis_${{ needs.version.outputs.version }}_amd64.AppImage` |
 
-            O app usa o `llm-agent` instalado no WSL (Windows) ou no próprio Linux: rode `./install.sh` no repositório antes.
+            O app usa o `jarvis` instalado no WSL (Windows) ou no próprio Linux: rode `./install.sh` no repositório antes.
           files: installers/*

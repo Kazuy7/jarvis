@@ -6,7 +6,7 @@ import headless from '@xterm/headless';
 import type { SessionAgent, SessionInfo } from './types.ts';
 
 /**
- * Argumentos do llm-agent para cada agente, no modo autonomo do menu. A
+ * Argumentos do jarvis para cada agente, no modo autonomo do menu. A
  * instrucao inicial (prompt) vai como ultimo argumento; o shell a ignora.
  */
 export function agentArgs(agent: SessionAgent, resume?: string, prompt?: string): string[] {

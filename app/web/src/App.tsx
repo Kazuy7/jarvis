@@ -58,14 +58,14 @@ export function App() {
 function Connected({ token }: { token: string }) {
   const api = useMemo(() => new Api(token), [token]);
   const webgl = useMemo(hasWebGL, []);
-  const [mode3d, setMode3d] = usePref('llm-agent-3d', true);
-  const [reduceMotion, setReduceMotion] = usePref('llm-agent-reduce-motion', systemReducedMotion());
-  const [voiceDemo, setVoiceDemo] = usePref('llm-agent-voice-demo', false);
+  const [mode3d, setMode3d] = usePref('jarvis-3d', true);
+  const [reduceMotion, setReduceMotion] = usePref('jarvis-reduce-motion', systemReducedMotion());
+  const [voiceDemo, setVoiceDemo] = usePref('jarvis-voice-demo', false);
   // O Jarvis ja comeca ouvindo a cada abertura do app (desligar vale so ate fechar).
   const [voiceOn, setVoiceOn] = useState(true);
   // Atalho de falar: ligado, ele e o modo de falar e a escuta continua fica desligada.
-  const [holdKey, setHoldKey] = usePref('llm-agent-hold-key', false);
-  const [hotkey, setHotkey] = useHotkey('llm-agent-hold-hotkey');
+  const [holdKey, setHoldKey] = usePref('jarvis-hold-key', false);
+  const [hotkey, setHotkey] = useHotkey('jarvis-hold-hotkey');
   // Esperando a combinacao nova nas configuracoes: nenhum atalho do app reage as teclas.
   const [hotkeyCapturing, setHotkeyCapturing] = useState(false);
   const voiceActive = voiceOn || holdKey;
@@ -74,12 +74,12 @@ function Connected({ token }: { token: string }) {
   const desktop = useDesktop();
   // Janela flutuante do navegador (Picture-in-Picture): aberta por um clique nas configuracoes.
   const [floating, setFloating] = useState<FloatingOrb | null>(null);
-  const [globeColor, setGlobeColor] = useChoice<GlobeColor>('llm-agent-globe-color', 'dourado', isGlobeColor);
+  const [globeColor, setGlobeColor] = useChoice<GlobeColor>('jarvis-globe-color', 'dourado', isGlobeColor);
   // Antes de pintar: sem isto, quem escolheu outra cor veria a interface sem cor no primeiro quadro.
   useLayoutEffect(() => applySystemColor(document.documentElement, globeColor), [globeColor]);
-  const [globeStyle, setGlobeStyle] = useChoice<GlobeStyle>('llm-agent-globe-style', 'holografico', isGlobeStyle);
-  const [globeHotkey, setGlobeHotkey] = useSavedHotkey('llm-agent-globe-hotkey', DEFAULT_GLOBE_HOTKEY);
-  const [sounds, setSounds] = usePref('llm-agent-sounds', true);
+  const [globeStyle, setGlobeStyle] = useChoice<GlobeStyle>('jarvis-globe-style', 'holografico', isGlobeStyle);
+  const [globeHotkey, setGlobeHotkey] = useSavedHotkey('jarvis-globe-hotkey', DEFAULT_GLOBE_HOTKEY);
+  const [sounds, setSounds] = usePref('jarvis-sounds', true);
   const [voice, setVoice] = useState<VoiceView>(OFF_VIEW);
   const voiceRef = useRef<VoiceClient | null>(null);
   // Ordens do Jarvis para a interface; atualizada a cada render (ver mais abaixo).

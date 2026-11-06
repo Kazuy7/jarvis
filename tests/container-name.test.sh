@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Testa a escolha do nome do container com aberturas simultaneas, usando um
-# "docker" falso (LLM_AGENT_DOCKER) que, como o de verdade, recusa um nome ja em
+# "docker" falso (JARVIS_DOCKER) que, como o de verdade, recusa um nome ja em
 # uso: cada container e um diretorio criado com mkdir, que e atomico.
 set -uo pipefail
 
@@ -10,7 +10,7 @@ trap 'chmod -R u+w "$work"; rm -rf "$work"' EXIT
 proj="$work/meu-app"
 state="$work/containers"
 mkdir -p "$proj" "$work/home" "$state"
-locks="$work/home/.config/llm-agent/locks"
+locks="$work/home/.config/jarvis/locks"
 
 fake="$work/docker"
 cat > "$fake" <<'EOF'
@@ -42,9 +42,9 @@ EOF
 chmod +x "$fake"
 
 run() {
-  (cd "$proj" && env -u SSH_AUTH_SOCK -u LLM_AGENT_NO_REMOTE_CONTROL \
+  (cd "$proj" && env -u SSH_AUTH_SOCK -u JARVIS_NO_REMOTE_CONTROL \
     HOME="$work/home" XDG_CONFIG_HOME="$work/home/.config" \
-    LLM_AGENT_DOCKER="$fake" LLM_AGENT_NO_UPDATE_CHECK=1 FAKE_STATE="$state" \
+    JARVIS_DOCKER="$fake" JARVIS_NO_UPDATE_CHECK=1 FAKE_STATE="$state" \
     "$repo/jarvis" "$@" </dev/null)
 }
 
@@ -87,38 +87,38 @@ check "todas as sessoes simultaneas abrem" \
 check "nenhuma recebe conflito de nome" \
   "0" "$(cat "$work"/out.* | grep -c 'Conflict')"
 check "cada sessao recebe um numero proprio, sem pular" \
-  "$(expected_names llm-agent-zsh-meu-app "$n")" \
+  "$(expected_names jarvis-zsh-meu-app "$n")" \
   "$(cat "$work"/out.* | cut -d' ' -f1 | LC_ALL=C sort)"
 
 concurrent "$n" claude
 check "o Remote Control usa o nome do proprio container" \
   "$(expected_names claude-meu-app "$n")" \
-  "$(cat "$work"/out.* | sed -n 's/^llm-agent-\(.*\) claude --remote-control \1$/\1/p' | LC_ALL=C sort)"
+  "$(cat "$work"/out.* | sed -n 's/^jarvis-\(.*\) claude --remote-control \1$/\1/p' | LC_ALL=C sort)"
 
 check "o nome volta a ficar livre quando a sessao termina" \
-  "llm-agent-zsh-meu-app zsh" "$(run zsh)"
+  "jarvis-zsh-meu-app zsh" "$(run zsh)"
 
-mkdir "$state/llm-agent-zsh-meu-app"
+mkdir "$state/jarvis-zsh-meu-app"
 check "pula o nome de um container existente sem lock" \
-  "llm-agent-zsh-meu-app-2 zsh" "$(run zsh)"
-rmdir "$state/llm-agent-zsh-meu-app"
+  "jarvis-zsh-meu-app-2 zsh" "$(run zsh)"
+rmdir "$state/jarvis-zsh-meu-app"
 
-flock -n "$locks/llm-agent-zsh-meu-app.lock" sleep 5 &
+flock -n "$locks/jarvis-zsh-meu-app.lock" sleep 5 &
 holder=$!
 for _ in $(seq 50); do
-  flock -n "$locks/llm-agent-zsh-meu-app.lock" true || break
+  flock -n "$locks/jarvis-zsh-meu-app.lock" true || break
   sleep 0.05
 done
 check "pula o nome reservado que ainda nao tem container" \
-  "llm-agent-zsh-meu-app-2 zsh" "$(run zsh)"
+  "jarvis-zsh-meu-app-2 zsh" "$(run zsh)"
 kill "$holder" 2>/dev/null
 wait "$holder" 2>/dev/null
 
 # Sem poder gravar o lock, abre como antes em vez de impedir a sessao.
 rm -rf "$locks"
-chmod a-w "$work/home/.config/llm-agent"
+chmod a-w "$work/home/.config/jarvis"
 check "sem pasta de locks a sessao abre mesmo assim" \
-  "llm-agent-zsh-meu-app zsh" "$(run zsh 2>/dev/null)"
-chmod u+w "$work/home/.config/llm-agent"
+  "jarvis-zsh-meu-app zsh" "$(run zsh 2>/dev/null)"
+chmod u+w "$work/home/.config/jarvis"
 
 [ "$failures" -eq 0 ] && echo "todos os testes passaram" || { echo "$failures falha(s)"; exit 1; }

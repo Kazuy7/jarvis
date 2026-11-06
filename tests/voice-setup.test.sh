@@ -77,8 +77,8 @@ ready_venv() { # menor
 }
 kept() { [ -e "$voice/.venv/antigo" ] && echo sim || echo nao; }
 
-run_setup() { # [LLM_AGENT_PYTHON]
-  PATH="$bin" LLM_AGENT_PYTHON="${1:-}" "$bin/bash" "$voice/setup.sh" >"$dir/out" 2>&1
+run_setup() { # [JARVIS_PYTHON]
+  PATH="$bin" JARVIS_PYTHON="${1:-}" "$bin/bash" "$voice/setup.sh" >"$dir/out" 2>&1
   code=$?
 }
 chosen() { cat "$dir/venv-criado-por" 2>/dev/null; }
@@ -120,15 +120,15 @@ scenario variavel
 fake_python python3 3.12.3
 fake_python python3.11 3.11.9
 run_setup python3.11
-check "LLM_AGENT_PYTHON: sai com sucesso" 0 "$code"
-check "LLM_AGENT_PYTHON: tem prioridade sobre o python3" python3.11 "$(chosen)"
+check "JARVIS_PYTHON: sai com sucesso" 0 "$code"
+check "JARVIS_PYTHON: tem prioridade sobre o python3" python3.11 "$(chosen)"
 
 scenario variavel-antiga
 fake_python python3 3.12.3
 fake_python python3.9 3.9.1
 run_setup python3.9
-check "LLM_AGENT_PYTHON antigo: nao troca por outro" 2 "$code"
-check "LLM_AGENT_PYTHON antigo: diz a versao dele" \
+check "JARVIS_PYTHON antigo: nao troca por outro" 2 "$code"
+check "JARVIS_PYTHON antigo: diz a versao dele" \
   "A voz precisa de Python 3.10 ou mais novo (encontrado: Python 3.9.1)." "$(cat "$dir/out")"
 
 scenario sem-venv

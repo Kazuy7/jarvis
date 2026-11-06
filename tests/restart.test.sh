@@ -7,9 +7,9 @@ set -uo pipefail
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
 work="$(mktemp -d)"
 trap 'kill $(cat "$work/pid" 2>/dev/null) 2>/dev/null; rm -rf "$work"' EXIT
-export LLM_AGENT_UI_STATE_DIR="$work/state"
-mkdir -p "$LLM_AGENT_UI_STATE_DIR"
-echo tok >"$LLM_AGENT_UI_STATE_DIR/token"
+export JARVIS_UI_STATE_DIR="$work/state"
+mkdir -p "$JARVIS_UI_STATE_DIR"
+echo tok >"$JARVIS_UI_STATE_DIR/token"
 
 # Repositorio com dois commits: "bom" e, depois dele, "ruim" (self-check falha).
 repo="$work/repo"
@@ -37,7 +37,7 @@ for _ in \$(seq 1 50); do [ -f "$work/state/server.json" ] && exit 0; sleep 0.1;
 exit 1
 EOF
 chmod +x "$work/ui.sh"
-export LLM_AGENT_RESTART_UI="$work/ui.sh" LLM_AGENT_RESTART_REPO="$repo"
+export JARVIS_RESTART_UI="$work/ui.sh" JARVIS_RESTART_REPO="$repo"
 
 failures=0
 check() {

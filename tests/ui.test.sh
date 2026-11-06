@@ -10,12 +10,12 @@ if [ ! -d "$repo/app/server/node_modules" ]; then
 fi
 
 work="$(mktemp -d)"
-export HOME="$work/home" XDG_CONFIG_HOME="$work/home/.config" LLM_AGENT_UI_NO_BUILD=1
-LLM_AGENT_UI_PORT="$(node -e 'const s=require("net").createServer();s.listen(0,"127.0.0.1",()=>{console.log(s.address().port);s.close()})')"
-export LLM_AGENT_UI_PORT
+export HOME="$work/home" XDG_CONFIG_HOME="$work/home/.config" JARVIS_UI_NO_BUILD=1
+JARVIS_UI_PORT="$(node -e 'const s=require("net").createServer();s.listen(0,"127.0.0.1",()=>{console.log(s.address().port);s.close()})')"
+export JARVIS_UI_PORT
 mkdir -p "$HOME"
-state="$XDG_CONFIG_HOME/llm-agent/ui"
-base="http://127.0.0.1:$LLM_AGENT_UI_PORT"
+state="$XDG_CONFIG_HOME/jarvis/ui"
+base="http://127.0.0.1:$JARVIS_UI_PORT"
 cleanup() {
   "$repo/jarvis" ui --stop >/dev/null 2>&1
   rm -rf "$work"
@@ -69,7 +69,7 @@ check "--stop sem servidor avisa" "O servidor nao esta rodando." "$out"
 # Servidor travado (processo vivo, porta sem resposta): --stop encerra pelo pid.
 sleep 300 &
 stuck=$!
-echo "{\"pid\":$stuck,\"port\":$LLM_AGENT_UI_PORT}" >"$state/server.json"
+echo "{\"pid\":$stuck,\"port\":$JARVIS_UI_PORT}" >"$state/server.json"
 out="$("$repo/jarvis" ui --stop 2>&1)"
 check "--stop com servidor travado sai com sucesso" "0" "$?"
 check "--stop com servidor travado avisa" "Servidor encerrado." "$out"

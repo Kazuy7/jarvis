@@ -8,7 +8,8 @@ funcionalidade nova nele mesmo (`aplicar_evolucao`). Textos para o usuário são
 | Pasta | O que é |
 | --- | --- |
 | `jarvis`, `install.sh`, `Dockerfile`, `docker-compose.yml` | CLI que roda Claude Code / Codex num container por projeto. |
-| `app/ui.sh` | `jarvis ui`: sobe, reaproveita e para o servidor da interface (porta 7777, `~/.config/llm-agent/ui`). |
+| `app/ui.sh` | `jarvis ui`: sobe, reaproveita e para o servidor da interface (porta 7777, `~/.config/jarvis/ui`). |
+| `app/migrate.sh` | Leva o estado do nome antigo (`llm-agent`) para `jarvis`; carregado pelos scripts de entrada. |
 | `app/restart.sh` | Reinício verificado depois de uma evolução, com volta à versão anterior se falhar. |
 | `app/server` | Servidor Node 24 (TypeScript executado direto, sem build): API, terminais (PTY), voz e evolução. |
 | `app/web` | Interface React + Three.js (Vite): cartões, gaveta de terminais, globo do Jarvis, configurações. |
@@ -17,7 +18,7 @@ funcionalidade nova nele mesmo (`aplicar_evolucao`). Textos para o usuário são
 
 ### Servidor (`app/server/src`)
 - `server.ts`: rotas HTTP (`/api/*`, com token e Origin), WebSocket dos terminais (`/ws`) e da voz (`/ws/voice`), `/api/self-check`.
-- `main.ts`: monta tudo com os caminhos reais (estado em `~/.config/llm-agent/ui`).
+- `main.ts`: monta tudo com os caminhos reais (estado em `~/.config/jarvis/ui`).
 - `voice/session.ts`: a conversa por voz (estados, interrupção, continuação, ditado). `voice/brain.ts`: o cérebro (Claude
   Haiku pelo Agent SDK) e o `JARVIS_PROMPT`. `voice/tools.ts`: as ferramentas do Jarvis (servidor MCP em processo).
   `voice/commands.ts`: a lista de comandos de voz mostrada na interface. `voice/memory.ts`: memória entre sessões.
@@ -47,6 +48,7 @@ python3 -m unittest discover -s app/voice/tests -t app/voice   # se mexer no wor
 bash tests/ui.test.sh && bash tests/restart.test.sh             # se mexer em app/ui.sh ou app/restart.sh
 bash tests/voice-setup.test.sh                                  # se mexer em app/voice/setup.sh
 bash tests/install.test.sh                                      # se mexer em install.sh
+bash tests/migrate.test.sh                                      # se mexer em app/migrate.sh
 ```
 
 ## Fluxo de trabalho

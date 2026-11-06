@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os';
 import { join, dirname } from 'node:path';
 
 export function tempHome(): string {
-  return realpathSync(mkdtempSync(join(tmpdir(), 'llm-agent-ui-')));
+  return realpathSync(mkdtempSync(join(tmpdir(), 'jarvis-ui-')));
 }
 
 export function write(file: string, content: string, mtime?: Date): void {
