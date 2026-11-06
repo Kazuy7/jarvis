@@ -14,9 +14,6 @@
 set -euo pipefail
 
 app_dir="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" && pwd -P)"
-# shellcheck source=migrate.sh
-. "$app_dir/migrate.sh"
-jarvis_migrate_state
 state_dir="${XDG_CONFIG_HOME:-$HOME/.config}/jarvis/ui"
 server_json="$state_dir/server.json"
 log="$state_dir/server.log"
@@ -32,9 +29,8 @@ running_pid() {
 }
 healthy() { curl -fsS --max-time 2 "http://127.0.0.1:$1/api/health" >/dev/null 2>&1; }
 # Campo numerico do /api/health de um servidor do jarvis ui na porta (vazio se nao for um).
-# llm-agent-ui e o nome que um servidor de antes da troca de nome ainda responde.
 health_field() {
-  curl -fsS --max-time 2 "http://127.0.0.1:$1/api/health" 2>/dev/null | grep -E '"app":"(jarvis-ui|llm-agent-ui)"' | grep -o "\"$2\":[0-9]*" | cut -d: -f2
+  curl -fsS --max-time 2 "http://127.0.0.1:$1/api/health" 2>/dev/null | grep '"app":"jarvis-ui"' | grep -o "\"$2\":[0-9]*" | cut -d: -f2
 }
 # Encerra um processo; se ele nao sair em 5 s (encerramento travado), forca.
 stop_pid() {
