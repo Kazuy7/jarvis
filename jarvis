@@ -36,10 +36,6 @@ fi
 
 repo_dir="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")"
 
-# shellcheck source=app/migrate.sh
-. "$repo_dir/app/migrate.sh"
-jarvis_migrate_state
-
 config_file="${XDG_CONFIG_HOME:-$HOME/.config}/jarvis/config"
 # shellcheck source=/dev/null
 [ -f "$config_file" ] && . "$config_file"
@@ -111,19 +107,10 @@ fi
 
 image="local/jarvis-safe:latest"
 
-# Imagem construida com o nome antigo: ganha o nome novo, sem reconstruir.
-legacy_image="local/llm-agent-safe:latest"
-if ! "${docker_cmd[@]}" image inspect "$image" >/dev/null 2>&1 \
-  && "${docker_cmd[@]}" image inspect "$legacy_image" >/dev/null 2>&1; then
-  "${docker_cmd[@]}" image tag "$legacy_image" "$image" >/dev/null 2>&1 \
-    && "${docker_cmd[@]}" image rm "$legacy_image" >/dev/null 2>&1 || true
-fi
-
-# Versao de um CLI instalada na imagem (labels definidos no Dockerfile; uma
-# imagem de antes da troca de nome ainda traz os labels llm-agent.*).
+# Versao de um CLI instalada na imagem (labels definidos no Dockerfile).
 image_version() {
   local v
-  v="$("${docker_cmd[@]}" image inspect --format "{{ or (index .Config.Labels \"jarvis.$1\") (index .Config.Labels \"llm-agent.$1\") }}" "$image" 2>/dev/null)" || return 0
+  v="$("${docker_cmd[@]}" image inspect --format "{{ index .Config.Labels \"jarvis.$1\" }}" "$image" 2>/dev/null)" || return 0
   [ "$v" = "<no value>" ] || echo "$v"
 }
 

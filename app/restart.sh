@@ -20,11 +20,6 @@ from="${1:?uso: restart.sh <commit-anterior>}"
 app_dir="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" && pwd -P)"
 ui="${JARVIS_RESTART_UI:-$app_dir/ui.sh}"
 repo="${JARVIS_RESTART_REPO:-$(dirname "$app_dir")}"
-if [ -z "${JARVIS_UI_STATE_DIR:-}" ]; then
-  # shellcheck source=migrate.sh
-  . "$app_dir/migrate.sh"
-  jarvis_migrate_state
-fi
 state_dir="${JARVIS_UI_STATE_DIR:-${XDG_CONFIG_HOME:-$HOME/.config}/jarvis/ui}"
 update="$state_dir/update.json"
 log() { echo "[atualização] $(date '+%H:%M:%S') $*"; }

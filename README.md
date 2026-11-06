@@ -35,8 +35,6 @@ O instalador:
 3. constrói a imagem com o seu UID/GID;
 4. avisa se `~/.local/bin` não estiver no seu `PATH`.
 
-Quem já usava o nome antigo não precisa fazer nada: na primeira execução, `~/.config/llm-agent`, `~/.local/share/llm-agent` e a imagem passam para o nome `jarvis`. As variáveis `LLM_AGENT_*` definidas por você precisam virar `JARVIS_*`.
-
 Para desinstalar: `./install.sh --uninstall`.
 
 ### Servidores onde só outro usuário acessa o Docker

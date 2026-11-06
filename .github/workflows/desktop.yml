@@ -121,7 +121,6 @@ jobs:
       - run: bash tests/container-name.test.sh
       - run: bash tests/voice-setup.test.sh
       - run: bash tests/install.test.sh
-      - run: bash tests/migrate.test.sh
 
   version:
     runs-on: ubuntu-latest

@@ -15,9 +15,6 @@ set -euo pipefail
 repo_dir="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")"
 bin_dir="${JARVIS_BIN_DIR:-$HOME/.local/bin}"
 target="$bin_dir/jarvis"
-# shellcheck source=app/migrate.sh
-. "$repo_dir/app/migrate.sh"
-jarvis_migrate_state
 config_dir="${XDG_CONFIG_HOME:-$HOME/.config}/jarvis"
 config_file="$config_dir/config"
 
