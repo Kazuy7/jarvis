@@ -31,7 +31,7 @@ cd jarvis
 O instalador:
 
 1. verifica se o Docker e o `docker compose` estão disponíveis;
-2. cria o comando `jarvis` (e `llm-agent`, o nome antigo, que os instaladores anteriores do app desktop usam) em `~/.local/bin` (um link para o script deste repositório; use `JARVIS_BIN_DIR` para outro destino);
+2. cria o comando `jarvis` em `~/.local/bin` (um link para o script deste repositório; use `JARVIS_BIN_DIR` para outro destino);
 3. constrói a imagem com o seu UID/GID;
 4. avisa se `~/.local/bin` não estiver no seu `PATH`.
 
@@ -234,7 +234,7 @@ O **Jarvis** é a mesma interface numa janela própria (Tauri). Ao abrir, ele ex
 - **Iniciar com o sistema:** nas configurações (⚙) ou na bandeja. O Jarvis abre minimizado, só com a bolinha, já ouvindo.
 - **Atalho global:** `Ctrl+Alt+J` mostra ou esconde a janela de qualquer lugar.
 - **Voz:** no app, o áudio toca sem precisar clicar antes e o microfone é liberado direto.
-- **Erros ao abrir:** o que falhar sem impedir o app de abrir (a bolinha, o atalho) fica em `%LOCALAPPDATA%\dev.llmagent.jarvis\logs\jarvis.log` (no Ubuntu, `~/.local/share/dev.llmagent.jarvis/logs`).
+- **Erros ao abrir:** o que falhar sem impedir o app de abrir (a bolinha, o atalho) fica em `%LOCALAPPDATA%\dev.jarvis.desktop\logs\jarvis.log` (no Ubuntu, `~/.local/share/dev.jarvis.desktop/logs`).
 - **Outra distribuição do WSL (Windows):** defina a variável de ambiente `JARVIS_WSL_DISTRO` (por exemplo, `Ubuntu-24.04`).
 
 Para compilar à mão (Rust e Node instalados; no Ubuntu, também `sudo apt install libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf`; no Windows, as Build Tools do Visual Studio com C++):

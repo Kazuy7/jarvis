@@ -15,8 +15,6 @@ set -euo pipefail
 repo_dir="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")"
 bin_dir="${JARVIS_BIN_DIR:-$HOME/.local/bin}"
 target="$bin_dir/jarvis"
-# Nome antigo: instaladores anteriores do app desktop chamam este comando.
-legacy="$bin_dir/llm-agent"
 # shellcheck source=app/migrate.sh
 . "$repo_dir/app/migrate.sh"
 jarvis_migrate_state
@@ -41,14 +39,12 @@ while [ $# -gt 0 ]; do
 done
 
 if $uninstall; then
-  for link in "$target" "$legacy"; do
-    if [ "$(readlink -f "$link" 2>/dev/null)" = "$repo_dir/jarvis" ]; then
-      rm -f "$link"
-      echo "Removido: $link"
-    else
-      echo "Nada a remover: $link nao aponta para este repositorio."
-    fi
-  done
+  if [ "$(readlink -f "$target" 2>/dev/null)" = "$repo_dir/jarvis" ]; then
+    rm -f "$target"
+    echo "Removido: $target"
+  else
+    echo "Nada a remover: $target nao aponta para este repositorio."
+  fi
   if [ -f "$config_file" ]; then
     rm -f "$config_file"
     rmdir "$config_dir" 2>/dev/null || true
@@ -84,20 +80,18 @@ if ! "${docker_cmd[@]}" info >/dev/null 2>&1; then
 fi
 
 mkdir -p "$bin_dir"
-for link in "$target" "$legacy"; do
-  if [ -L "$link" ] && [ ! -e "$link" ]; then
-    # Link quebrado (por exemplo, a pasta do repositorio mudou de nome): refaz.
-    rm -f "$link"
+if [ -L "$target" ] && [ ! -e "$target" ]; then
+  # Link quebrado (por exemplo, a pasta do repositorio mudou de nome): refaz.
+  rm -f "$target"
+fi
+if [ -e "$target" ]; then
+  if [ "$(readlink -f "$target")" != "$repo_dir/jarvis" ]; then
+    echo "Erro: $target ja existe e nao e deste repositorio. Remova-o e rode de novo." >&2
+    exit 1
   fi
-  if [ -e "$link" ]; then
-    if [ "$(readlink -f "$link")" != "$repo_dir/jarvis" ]; then
-      echo "Erro: $link ja existe e nao e deste repositorio. Remova-o e rode de novo." >&2
-      exit 1
-    fi
-  else
-    ln -s "$repo_dir/jarvis" "$link"
-  fi
-done
+else
+  ln -s "$repo_dir/jarvis" "$target"
+fi
 echo "Comando instalado: $target"
 
 echo "Construindo a imagem (pode levar alguns minutos)..."

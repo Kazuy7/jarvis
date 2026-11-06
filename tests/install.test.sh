@@ -27,17 +27,14 @@ install() { "$repo/install.sh" "$@" >/dev/null 2>&1; }
 install
 check "instala sem erro" "0" "$?"
 check "cria o comando jarvis" "$repo/jarvis" "$(readlink -f "$work/bin/jarvis")"
-check "mantem o nome antigo para o app desktop" "$repo/jarvis" "$(readlink -f "$work/bin/llm-agent")"
 
 install
 check "instalar de novo nao falha" "0" "$?"
 
-# Pasta do repositorio renomeada: os links antigos ficam quebrados e sao refeitos.
+# Pasta do repositorio renomeada: o link antigo fica quebrado e e refeito.
 ln -sfn "$work/pasta-antiga/jarvis" "$work/bin/jarvis"
-ln -sfn "$work/pasta-antiga/llm-agent" "$work/bin/llm-agent"
 install
 check "refaz o link quebrado do jarvis" "$repo/jarvis" "$(readlink -f "$work/bin/jarvis")"
-check "refaz o link quebrado do nome antigo" "$repo/jarvis" "$(readlink -f "$work/bin/llm-agent")"
 
 # Arquivo que nao e deste repositorio: nao sobrescreve.
 rm -f "$work/bin/jarvis"
@@ -50,6 +47,5 @@ install
 
 install --uninstall
 check "--uninstall remove o jarvis" "nao" "$([ -e "$work/bin/jarvis" ] && echo sim || echo nao)"
-check "--uninstall remove o nome antigo" "nao" "$([ -e "$work/bin/llm-agent" ] && echo sim || echo nao)"
 
 [ "$failures" -eq 0 ] && echo "todos os testes passaram" || { echo "$failures falha(s)"; exit 1; }

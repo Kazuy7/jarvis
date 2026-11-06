@@ -93,7 +93,7 @@ fn start_server(restart: bool) -> Result<String, String> {
 }
 
 /// Erro que nao impede o app de abrir: vai para jarvis.log, na pasta de logs do app
-/// (no Windows, %LOCALAPPDATA%\dev.llmagent.jarvis\logs).
+/// (no Windows, %LOCALAPPDATA%\dev.jarvis.desktop\logs).
 fn log_error(app: &AppHandle, what: &str, err: impl std::fmt::Display) {
     use std::io::Write;
     let Ok(dir) = app.path().app_log_dir() else { return };
