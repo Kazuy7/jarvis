@@ -32,11 +32,11 @@ HEARD_MAX_BYTES = 8 * 32000  # esperando ser chamado, so transcreve falas de ate
 SLEEP_END_MS = 600
 MAX_EMBED_CLIPS = 8
 # Modelo de reconhecimento da voz do usuario (baixado na primeira vez que for preciso).
-SPEAKER_DIR = os.environ.get("LLM_AGENT_VOICE_SPEAKER_DIR") or os.path.join(
+SPEAKER_DIR = os.environ.get("JARVIS_VOICE_SPEAKER_DIR") or os.path.join(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__))), ".venv", "models"
 )
 # Janela do whisper (o CTranslate2 completa ate 30 s de todo jeito: janelas menores nao aceleram).
-WINDOW_S = int(os.environ.get("LLM_AGENT_VOICE_WINDOW_S", "30"))
+WINDOW_S = int(os.environ.get("JARVIS_VOICE_WINDOW_S", "30"))
 
 _lock = threading.Lock()
 
@@ -76,7 +76,7 @@ def load_whisper(name: str):
         except Exception as err:  # bibliotecas CUDA ausentes ou incompativeis
             log(f"whisper: GPU indisponivel ({err}); usando CPU")
     # Mais threads pioram (disputam a CPU com o detector de fala e a palavra de ativacao).
-    threads = int(os.environ.get("LLM_AGENT_VOICE_STT_THREADS", "4"))
+    threads = int(os.environ.get("JARVIS_VOICE_STT_THREADS", "4"))
     log(f"whisper: modelo {name} na CPU (int8, {threads} threads)")
     return WhisperModel(name, device="cpu", compute_type="int8", cpu_threads=threads)
 
@@ -91,14 +91,14 @@ def main() -> None:
 
     wake = Model(wakeword_models=["hey_jarvis"], inference_framework="onnx")
     vad = VAD()
-    whisper = load_whisper(os.environ.get("LLM_AGENT_VOICE_STT_MODEL", "auto"))
-    voice = os.environ.get("LLM_AGENT_VOICE", "pt-BR-AntonioNeural")
+    whisper = load_whisper(os.environ.get("JARVIS_VOICE_STT_MODEL", "auto"))
+    voice = os.environ.get("JARVIS_VOICE", "pt-BR-AntonioNeural")
     # Um pouco mais rapido que o padrao do edge-tts soa mais natural numa conversa.
-    rate = os.environ.get("LLM_AGENT_VOICE_RATE", "+15%")
+    rate = os.environ.get("JARVIS_VOICE_RATE", "+15%")
     if not re.fullmatch(r"[+-]\d{1,2}%", rate):
-        log(f"LLM_AGENT_VOICE_RATE invalido ({rate!r}); usando +15%")
+        log(f"JARVIS_VOICE_RATE invalido ({rate!r}); usando +15%")
         rate = "+15%"
-    threshold = float(os.environ.get("LLM_AGENT_VOICE_WAKE_THRESHOLD", "0.5"))
+    threshold = float(os.environ.get("JARVIS_VOICE_WAKE_THRESHOLD", "0.5"))
 
     stt_pool = ThreadPoolExecutor(max_workers=1)
     tts_pool = ThreadPoolExecutor(max_workers=1)
@@ -109,11 +109,11 @@ def main() -> None:
     # Transcricao no Groq (configurada pela tela); None = whisper local.
     cloud = {"stt": None, "warned": 0.0}
     # Chamado pelo nome ("Jarvis, ..."): esperando, transcreve falas curtas e o servidor procura o nome.
-    name_wake = os.environ.get("LLM_AGENT_VOICE_NAME_WAKE", "1") != "0"
+    name_wake = os.environ.get("JARVIS_VOICE_NAME_WAKE", "1") != "0"
     # Fim da fala depois de 1 s de silencio (o servidor manda o das configuracoes no comando
     # "pauses"); se a fala parecer incompleta, o servidor espera mais um pouco, e se o
     # usuario continuar, emenda as falas.
-    end_ms = int(os.environ.get("LLM_AGENT_VOICE_END_MS", "1000"))
+    end_ms = int(os.environ.get("JARVIS_VOICE_END_MS", "1000"))
 
     def sleep_end() -> int:
         return min(end_ms, SLEEP_END_MS)

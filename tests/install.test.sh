@@ -5,7 +5,7 @@ set -uo pipefail
 repo="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
 work="$(mktemp -d)"
 trap 'rm -rf "$work"' EXIT
-export HOME="$work/home" XDG_CONFIG_HOME="$work/home/.config" LLM_AGENT_BIN_DIR="$work/bin"
+export HOME="$work/home" XDG_CONFIG_HOME="$work/home/.config" JARVIS_BIN_DIR="$work/bin"
 mkdir -p "$HOME" "$work/fake" "$work/bin"
 printf '#!/bin/sh\nexit 0\n' >"$work/fake/docker"
 chmod +x "$work/fake/docker"

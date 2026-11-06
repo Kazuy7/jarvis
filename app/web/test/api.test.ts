@@ -11,12 +11,12 @@ describe('takeToken', () => {
     const storage = memoryStorage();
     const replace = vi.fn();
     expect(takeToken({ hash: '#token=abc%2D1', pathname: '/', search: '?x=1' }, storage, replace)).toBe('abc-1');
-    expect(storage.getItem('llm-agent-token')).toBe('abc-1');
+    expect(storage.getItem('jarvis-token')).toBe('abc-1');
     expect(replace).toHaveBeenCalledWith('/?x=1');
   });
   it('sem fragmento, usa o token guardado', () => {
     const storage = memoryStorage();
-    storage.setItem('llm-agent-token', 'salvo');
+    storage.setItem('jarvis-token', 'salvo');
     expect(takeToken({ hash: '', pathname: '/', search: '' }, storage, vi.fn())).toBe('salvo');
   });
   it('sem nada, devolve null', () => {

@@ -2,7 +2,7 @@
 # Instala o comando jarvis e constroi a imagem com o seu UID/GID.
 #
 # Uso:
-#   ./install.sh                 instala em ~/.local/bin (ou $LLM_AGENT_BIN_DIR)
+#   ./install.sh                 instala em ~/.local/bin (ou $JARVIS_BIN_DIR)
 #   ./install.sh --docker "CMD"  usa CMD para chamar o Docker, por exemplo
 #                                "sudo -u dockeruser docker" quando so outro
 #                                usuario tem acesso ao Docker
@@ -13,11 +13,14 @@
 set -euo pipefail
 
 repo_dir="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")"
-bin_dir="${LLM_AGENT_BIN_DIR:-$HOME/.local/bin}"
+bin_dir="${JARVIS_BIN_DIR:-$HOME/.local/bin}"
 target="$bin_dir/jarvis"
-# Nome antigo: o app desktop ja instalado chama este comando.
+# Nome antigo: instaladores anteriores do app desktop chamam este comando.
 legacy="$bin_dir/llm-agent"
-config_dir="${XDG_CONFIG_HOME:-$HOME/.config}/llm-agent"
+# shellcheck source=app/migrate.sh
+. "$repo_dir/app/migrate.sh"
+jarvis_migrate_state
+config_dir="${XDG_CONFIG_HOME:-$HOME/.config}/jarvis"
 config_file="$config_dir/config"
 
 usage() { sed -n '2,/^set -euo/{/^set -euo/d;s/^# \{0,1\}//;p}' "$0"; }
@@ -51,21 +54,21 @@ if $uninstall; then
     rmdir "$config_dir" 2>/dev/null || true
     echo "Removido: $config_file"
   fi
-  echo "A imagem local/llm-agent-safe continua no Docker; remova com:"
-  echo "  docker rmi local/llm-agent-safe:latest"
+  echo "A imagem local/jarvis-safe continua no Docker; remova com:"
+  echo "  docker rmi local/jarvis-safe:latest"
   exit 0
 fi
 
 if [ -n "$docker_value" ]; then
   mkdir -p "$config_dir"
-  printf 'LLM_AGENT_DOCKER=%q\n' "$docker_value" > "$config_file"
-  LLM_AGENT_DOCKER="$docker_value"
+  printf 'JARVIS_DOCKER=%q\n' "$docker_value" > "$config_file"
+  JARVIS_DOCKER="$docker_value"
   echo "Comando do Docker salvo em $config_file: $docker_value"
 elif [ -f "$config_file" ]; then
   # shellcheck source=/dev/null
   . "$config_file"
 fi
-read -ra docker_cmd <<< "${LLM_AGENT_DOCKER:-docker}"
+read -ra docker_cmd <<< "${JARVIS_DOCKER:-docker}"
 
 if ! "${docker_cmd[@]}" compose version >/dev/null 2>&1; then
   echo "Erro: nao foi possivel rodar '${docker_cmd[*]} compose'." >&2

@@ -1,5 +1,5 @@
 {
-  "name": "llm-agent-ui-web",
+  "name": "jarvis-ui-web",
   "private": true,
   "type": "module",
   "scripts": {

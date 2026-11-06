@@ -1,7 +1,7 @@
 [package]
 name = "jarvis-desktop"
 version = "1.3.0"
-description = "Jarvis: app desktop do llm-agent (Windows)"
+description = "Jarvis: app desktop (Windows e Linux)"
 edition = "2021"
 
 [build-dependencies]

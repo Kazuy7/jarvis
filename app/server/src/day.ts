@@ -85,7 +85,7 @@ export function createDayService(opts: DayOptions) {
   async function locate(lat?: number, lon?: number): Promise<{ lat: number; lon: number; place: string }> {
     if (lat !== undefined && lon !== undefined) return { lat, lon, place: '' };
     const city = opts.city;
-    if (!city) throw new Error('Permita a localização no navegador ou defina LLM_AGENT_UI_CITY.');
+    if (!city) throw new Error('Permita a localização no navegador ou defina JARVIS_UI_CITY.');
     return memo(`geo:${city}`, 24 * 3600e3, async () => {
       const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=1&language=pt`;
       const r = (await (await get(url)).json()).results?.[0];

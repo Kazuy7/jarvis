@@ -12,15 +12,20 @@
 #    como revertido, volta o repositorio para <commit-anterior> e sobe a versao
 #    anterior. O servidor que subir anuncia o resultado por voz.
 #
-# Variaveis (testes): LLM_AGENT_RESTART_UI (script de subir/parar, padrao
-# app/ui.sh), LLM_AGENT_RESTART_REPO (repositorio, padrao a raiz deste).
+# Variaveis (testes): JARVIS_RESTART_UI (script de subir/parar, padrao
+# app/ui.sh), JARVIS_RESTART_REPO (repositorio, padrao a raiz deste).
 set -uo pipefail
 
 from="${1:?uso: restart.sh <commit-anterior>}"
 app_dir="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" && pwd -P)"
-ui="${LLM_AGENT_RESTART_UI:-$app_dir/ui.sh}"
-repo="${LLM_AGENT_RESTART_REPO:-$(dirname "$app_dir")}"
-state_dir="${LLM_AGENT_UI_STATE_DIR:-${XDG_CONFIG_HOME:-$HOME/.config}/llm-agent/ui}"
+ui="${JARVIS_RESTART_UI:-$app_dir/ui.sh}"
+repo="${JARVIS_RESTART_REPO:-$(dirname "$app_dir")}"
+if [ -z "${JARVIS_UI_STATE_DIR:-}" ]; then
+  # shellcheck source=migrate.sh
+  . "$app_dir/migrate.sh"
+  jarvis_migrate_state
+fi
+state_dir="${JARVIS_UI_STATE_DIR:-${XDG_CONFIG_HOME:-$HOME/.config}/jarvis/ui}"
 update="$state_dir/update.json"
 log() { echo "[atualização] $(date '+%H:%M:%S') $*"; }
 
@@ -45,7 +50,7 @@ mark_rolled_back() {
   ' "$update" "$1"
 }
 
-sleep "${LLM_AGENT_RESTART_DELAY:-2}" # deixa a resposta do Jarvis ("comecei a aplicar") terminar de sair
+sleep "${JARVIS_RESTART_DELAY:-2}" # deixa a resposta do Jarvis ("comecei a aplicar") terminar de sair
 log "reiniciando com o código novo"
 "$ui" --stop >/dev/null
 if "$ui" >/dev/null; then

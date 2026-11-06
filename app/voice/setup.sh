@@ -8,11 +8,11 @@ set -euo pipefail
 dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
 venv="$dir/.venv"
 
-# Python usado: o de LLM_AGENT_PYTHON, se definido (sem troca-lo por outro); senao
+# Python usado: o de JARVIS_PYTHON, se definido (sem troca-lo por outro); senao
 # o python3 e, se ele for antigo (como no Ubuntu 20.04), uma versao instalada ao
 # lado dele. A 3.12 vem antes das demais por ser a testada no CI.
-if [ -n "${LLM_AGENT_PYTHON:-}" ]; then
-  candidates=("$LLM_AGENT_PYTHON")
+if [ -n "${JARVIS_PYTHON:-}" ]; then
+  candidates=("$JARVIS_PYTHON")
 else
   candidates=(python3 python3.12 python3.13 python3.14 python3.11 python3.10)
 fi

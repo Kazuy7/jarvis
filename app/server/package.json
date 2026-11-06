@@ -1,5 +1,5 @@
 {
-  "name": "llm-agent-ui-server",
+  "name": "jarvis-ui-server",
   "private": true,
   "type": "module",
   "engines": {

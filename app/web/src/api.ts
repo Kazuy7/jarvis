@@ -52,7 +52,7 @@ export type VoiceRecoverInput =
 export interface JarvisFact { id: string; about: string; project?: string; text: string; updated: string }
 export interface JarvisMemoryView { facts: JarvisFact[]; conversations: { at: string; text: string }[] }
 
-const TOKEN_KEY = 'llm-agent-token';
+const TOKEN_KEY = 'jarvis-token';
 
 /**
  * Token vindo de "#token=..." (impresso pelo jarvis ui). Fica no

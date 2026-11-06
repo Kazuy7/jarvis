@@ -33,8 +33,8 @@ const DEFAULT_GREETINGS = [
   'Aqui, senhor. O que precisa?',
 ];
 const stateDir =
-  process.env.LLM_AGENT_UI_STATE_DIR ?? join(process.env.XDG_CONFIG_HOME ?? join(home, '.config'), 'llm-agent', 'ui');
-const workspaceDir = join(process.env.XDG_DATA_HOME ?? join(home, '.local', 'share'), 'llm-agent', 'workspace');
+  process.env.JARVIS_UI_STATE_DIR ?? join(process.env.XDG_CONFIG_HOME ?? join(home, '.config'), 'jarvis', 'ui');
+const workspaceDir = join(process.env.XDG_DATA_HOME ?? join(home, '.local', 'share'), 'jarvis', 'workspace');
 const token = loadOrCreateToken(stateDir);
 // Memoria do Jarvis entre sessoes (fatos e resumos de conversa).
 const memory = new JarvisMemory(join(stateDir, 'jarvis-memory.json'));
@@ -60,17 +60,17 @@ voiceWorker.configureStt(sttConfig(voiceSettings.get()));
 voiceWorker.configurePauses(pauseConfig(voiceSettings.get().pauses).endMs);
 // Codigo de recuperacao da senha da voz por e-mail (opcional): smtps://usuario:senha@host:465.
 let mailer: Mailer | undefined;
-if (process.env.LLM_AGENT_SMTP_URL) {
+if (process.env.JARVIS_SMTP_URL) {
   try {
-    const smtp = parseSmtpUrl(process.env.LLM_AGENT_SMTP_URL, process.env.LLM_AGENT_SMTP_FROM);
+    const smtp = parseSmtpUrl(process.env.JARVIS_SMTP_URL, process.env.JARVIS_SMTP_FROM);
     mailer = (to, subject, text) => sendMail(smtp, to, subject, text);
   } catch (err) {
-    console.error(`LLM_AGENT_SMTP_URL inválida (${(err as Error).message}); recuperação da senha da voz só pela voz`);
+    console.error(`JARVIS_SMTP_URL inválida (${(err as Error).message}); recuperação da senha da voz só pela voz`);
   }
 }
-const speakerThreshold = Number(process.env.LLM_AGENT_VOICE_SPEAKER_THRESHOLD) || DEFAULT_THRESHOLD;
+const speakerThreshold = Number(process.env.JARVIS_VOICE_SPEAKER_THRESHOLD) || DEFAULT_THRESHOLD;
 let brain: ClaudeBrain | undefined;
-const voiceModel = process.env.LLM_AGENT_VOICE_MODEL || 'haiku';
+const voiceModel = process.env.JARVIS_VOICE_MODEL || 'haiku';
 const makeBrain = (ctx: Parameters<typeof createJarvisServer>[0]) =>
   (brain = new ClaudeBrain({
     model: voiceModel,
@@ -124,30 +124,32 @@ async function brainCheck(): Promise<void> {
 
 const app = createApp({
   home,
-  port: Number(process.env.LLM_AGENT_UI_PORT ?? 7777),
+  port: Number(process.env.JARVIS_UI_PORT ?? 7777),
   token,
   webDir: join(repo, 'app', 'web', 'dist'),
-  bin: process.env.LLM_AGENT_BIN ?? join(repo, 'jarvis'),
-  extraOrigins: (process.env.LLM_AGENT_UI_ORIGINS ?? '').split(',').map((s) => s.trim()).filter(Boolean),
+  bin: process.env.JARVIS_BIN ?? join(repo, 'jarvis'),
+  extraOrigins: (process.env.JARVIS_UI_ORIGINS ?? '').split(',').map((s) => s.trim()).filter(Boolean),
   workspaceDir,
-  projectsDir: process.env.LLM_AGENT_PROJECTS_DIR || undefined,
-  city: process.env.LLM_AGENT_UI_CITY || undefined,
-  newsUrl: process.env.LLM_AGENT_UI_NEWS_RSS || undefined,
+  // Conversas antigas do workspace e das evolucoes guardam o caminho de antes da troca de nome.
+  hiddenDirs: [join(process.env.XDG_DATA_HOME ?? join(home, '.local', 'share'), 'llm-agent')],
+  projectsDir: process.env.JARVIS_PROJECTS_DIR || undefined,
+  city: process.env.JARVIS_UI_CITY || undefined,
+  newsUrl: process.env.JARVIS_UI_NEWS_RSS || undefined,
   // Busca do Jarvis: DuckDuckGo + Wikipedia; se o DuckDuckGo bloquear, a busca do Claude (no plano).
-  webSearchFallback: process.env.LLM_AGENT_VOICE_WEB_FALLBACK === '0' ? undefined : claudeWebSearch({ model: voiceModel, cwd: workspaceDir }),
+  webSearchFallback: process.env.JARVIS_VOICE_WEB_FALLBACK === '0' ? undefined : claudeWebSearch({ model: voiceModel, cwd: workspaceDir }),
   voice: {
     worker: voiceWorker,
     brain: makeBrain,
-    bargeIn: process.env.LLM_AGENT_VOICE_BARGE_IN !== '0',
+    bargeIn: process.env.JARVIS_VOICE_BARGE_IN !== '0',
     // Saudacoes ao ser chamado sem pedido ("|" separa; vazio desliga).
-    greetings: (process.env.LLM_AGENT_VOICE_GREETINGS ?? DEFAULT_GREETINGS.join('|')).split('|'),
+    greetings: (process.env.JARVIS_VOICE_GREETINGS ?? DEFAULT_GREETINGS.join('|')).split('|'),
     announce:
-      process.env.LLM_AGENT_VOICE_ANNOUNCE === '0'
+      process.env.JARVIS_VOICE_ANNOUNCE === '0'
         ? undefined
-        : { newsEveryMin: Math.max(15, Number(process.env.LLM_AGENT_VOICE_NEWS_EVERY_MIN) || 90) },
+        : { newsEveryMin: Math.max(15, Number(process.env.JARVIS_VOICE_NEWS_EVERY_MIN) || 90) },
     settings: voiceSettings,
     // Fala por cima da resposta que nao e clara: um segundo Claude decide se muda a resposta.
-    judge: process.env.LLM_AGENT_VOICE_JUDGE === '0' ? undefined : claudeJudge({ model: voiceModel, cwd: workspaceDir }),
+    judge: process.env.JARVIS_VOICE_JUDGE === '0' ? undefined : claudeJudge({ model: voiceModel, cwd: workspaceDir }),
     // Aviso de sessao acompanhada que terminou ou deu erro, resumido por um Claude a parte.
     watchSummary: claudeWatchSummary({ model: voiceModel, cwd: workspaceDir }),
     // So a voz cadastrada ativa o Jarvis (conferida na ativacao).
@@ -156,7 +158,7 @@ const app = createApp({
   manualPath: join(repo, 'README.md'),
   evolution: {
     repoDir: repo,
-    devRoot: join(process.env.XDG_DATA_HOME ?? join(home, '.local', 'share'), 'llm-agent', 'jarvis-dev'),
+    devRoot: join(process.env.XDG_DATA_HOME ?? join(home, '.local', 'share'), 'jarvis', 'jarvis-dev'),
     stateFile: join(stateDir, 'evolution.json'),
     updateFile: join(stateDir, 'update.json'),
     run,

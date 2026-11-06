@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Testa os argumentos que o jarvis passa ao container, usando um "docker"
-# falso (LLM_AGENT_DOCKER) que imprime o que viria depois de "compose ... run".
+# falso (JARVIS_DOCKER) que imprime o que viria depois de "compose ... run".
 set -uo pipefail
 
 repo="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
@@ -27,9 +27,9 @@ chmod +x "$fake"
 run() {
   local vars=()
   while [ $# -gt 0 ] && [[ "$1" == *=* ]]; do vars+=("$1"); shift; done
-  (cd "$proj" && env -u SSH_AUTH_SOCK -u LLM_AGENT_NO_REMOTE_CONTROL \
+  (cd "$proj" && env -u SSH_AUTH_SOCK -u JARVIS_NO_REMOTE_CONTROL \
     HOME="$work/home" XDG_CONFIG_HOME="$work/home/.config" \
-    LLM_AGENT_DOCKER="$fake" LLM_AGENT_NO_UPDATE_CHECK=1 \
+    JARVIS_DOCKER="$fake" JARVIS_NO_UPDATE_CHECK=1 \
     "${vars[@]}" "$repo/jarvis" "$@" </dev/null)
 }
 
@@ -45,7 +45,7 @@ check() { # descricao esperado obtido
   fi
 }
 
-prefix="--rm --name llm-agent-claude-meu-app agent"
+prefix="--rm --name jarvis-claude-meu-app agent"
 
 check "claude liga o Remote Control" \
   "$prefix claude --remote-control claude-meu-app" \
@@ -54,22 +54,22 @@ check "flags do usuario vem depois" \
   "$prefix claude --remote-control claude-meu-app --dangerously-skip-permissions" \
   "$(run claude --dangerously-skip-permissions)"
 check "segunda sessao usa o sufixo -2" \
-  "--rm --name llm-agent-claude-meu-app-2 agent claude --remote-control claude-meu-app-2" \
-  "$(run FAKE_TAKEN=llm-agent-claude-meu-app claude)"
+  "--rm --name jarvis-claude-meu-app-2 agent claude --remote-control claude-meu-app-2" \
+  "$(run FAKE_TAKEN=jarvis-claude-meu-app claude)"
 check "--remote-control do usuario nao duplica" \
   "$prefix claude --remote-control teste" \
   "$(run claude --remote-control teste)"
 check "--remote-control=nome do usuario nao duplica" \
   "$prefix claude --remote-control=teste" \
   "$(run claude --remote-control=teste)"
-check "LLM_AGENT_NO_REMOTE_CONTROL=1 desliga" \
+check "JARVIS_NO_REMOTE_CONTROL=1 desliga" \
   "$prefix claude" \
-  "$(run LLM_AGENT_NO_REMOTE_CONTROL=1 claude)"
+  "$(run JARVIS_NO_REMOTE_CONTROL=1 claude)"
 check "codex nao muda" \
-  "--rm --name llm-agent-codex-meu-app agent codex" \
+  "--rm --name jarvis-codex-meu-app agent codex" \
   "$(run codex)"
 check "zsh nao muda" \
-  "--rm --name llm-agent-zsh-meu-app agent zsh" \
+  "--rm --name jarvis-zsh-meu-app agent zsh" \
   "$(run zsh)"
 
 [ "$failures" -eq 0 ] && echo "todos os testes passaram" || { echo "$failures falha(s)"; exit 1; }

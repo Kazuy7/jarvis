@@ -8,9 +8,9 @@ import { buildFixture } from './fixture.ts';
 import { startApp } from './app.ts';
 import { tempHome, waitFor, write } from './helpers.ts';
 
-/** llm-agent falso: mostra argumentos e projeto, le uma linha e sai com 3. */
+/** jarvis falso: mostra argumentos e projeto, le uma linha e sai com 3. */
 function fakeAgent(dir: string): string {
-  const bin = join(dir, 'fake-llm-agent');
+  const bin = join(dir, 'fake-jarvis');
   write(bin, '#!/usr/bin/env bash\necho "ARGS:$*"\necho "WORKDIR:$AGENT_WORKDIR"\nIFS= read -r line\necho "GOT:$line"\nexit 3\n');
   chmodSync(bin, 0o755);
   return bin;
@@ -26,7 +26,7 @@ test('agentArgs monta os comandos de cada agente', () => {
   assert.deepEqual(agentArgs('shell', undefined, 'oi'), ['zsh']);
 });
 
-test('TerminalManager executa o llm-agent no projeto e guarda o historico', async () => {
+test('TerminalManager executa o jarvis no projeto e guarda o historico', async () => {
   const home = tempHome();
   const proj = join(home, 'proj');
   mkdirSync(proj);
