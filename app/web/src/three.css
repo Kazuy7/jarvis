@@ -184,3 +184,16 @@
 .jarvis-facts ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
 .jarvis-facts li { display: flex; justify-content: space-between; gap: 10px; font-size: 13px; }
 .jarvis-facts .link { background: none; border: none; padding: 0; color: var(--muted); text-decoration: underline; cursor: pointer; font-size: 12px; flex: none; }
+
+/* Scroll dos modais e da busca (Ctrl+K): fino, na cor do Jarvis, sem trilho aparente. O trilho tem margem para nao
+   encostar nos cantos arredondados; o thumb acende ao passar o mouse. Firefox: so as propriedades padrao. */
+.modal ::-webkit-scrollbar, .search ::-webkit-scrollbar { width: 8px; height: 8px; }
+.modal ::-webkit-scrollbar-track, .search ::-webkit-scrollbar-track { margin: 14px 0; background: transparent; }
+.modal ::-webkit-scrollbar-thumb, .search ::-webkit-scrollbar-thumb {
+  border: 2px solid transparent; border-radius: 8px; background: rgba(var(--sys-rgb), 0.28) padding-box;
+}
+.modal ::-webkit-scrollbar-thumb:hover, .search ::-webkit-scrollbar-thumb:hover { background: rgba(var(--sys-rgb), 0.55) padding-box; }
+.modal ::-webkit-scrollbar-corner, .search ::-webkit-scrollbar-corner { background: transparent; }
+@supports not selector(::-webkit-scrollbar) {
+  .modal *, .search * { scrollbar-width: thin; scrollbar-color: rgba(var(--sys-rgb), 0.35) transparent; }
+}
