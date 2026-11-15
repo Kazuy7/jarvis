@@ -3,7 +3,7 @@ import { COMMANDS } from '../../../server/src/voice/commands.ts';
 /** Lista dos comandos de voz (modal do modo 3D), gerada da mesma lista que o Jarvis usa. */
 export function CommandsPanel() {
   return (
-    <section className="panel commands-panel">
+    <section className="panel">
       <h1>Comandos de voz</h1>
       <p className="muted">
         Diga “Hey Jarvis” e peça com suas palavras; não precisa decorar as frases. Alguns exemplos:

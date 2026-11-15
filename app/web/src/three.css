@@ -67,13 +67,6 @@
 .ring-pager button { width: 28px; height: 28px; padding: 0; border-radius: 50%; background: rgba(10, 14, 26, 0.7); }
 .ring-status { position: absolute; left: 50%; bottom: 24px; transform: translateX(-50%); color: var(--muted); font-size: 12px; }
 
-.panel-overlay {
-  position: absolute; top: 64px; left: 16px; bottom: 16px; z-index: 6;
-  width: min(440px, 34%); overflow: auto; padding: 20px 24px;
-  background: rgba(10, 10, 16, 0.9); backdrop-filter: blur(8px);
-  border: 1px solid rgba(var(--sys-rgb), 0.18); border-radius: 12px;
-}
-.panel-close { position: sticky; top: 0; float: right; border: none; background: transparent; font-size: 18px; }
 .facts { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 8px; }
 .facts .muted { display: inline-block; width: 130px; }
 
@@ -123,8 +116,8 @@
 .modal { position: relative; display: flex; flex-direction: column; width: min(560px, 100%); max-height: 100%; background: rgba(10, 10, 16, 0.95); border: 1px solid rgba(var(--sys-rgb), 0.18); border-radius: 14px; box-shadow: 0 18px 60px rgba(0, 0, 0, 0.6); outline: none; }
 .modal.wide { width: min(940px, 100%); }
 .modal .day { flex: 1; min-height: 0; padding: 24px 28px; border: none; background: transparent; }
-.modal .commands-panel { flex: 1; min-height: 0; overflow: auto; padding: 24px 28px; }
-.modal .commands-panel h1 { padding-right: 36px; }
+.modal .panel { flex: 1; min-height: 0; overflow: auto; padding: 24px 28px; }
+.modal .panel h1 { padding-right: 36px; }
 .modal-close { position: absolute; top: 14px; right: 18px; z-index: 1; width: 28px; height: 28px; padding: 0; border: none; border-radius: 50%; background: rgba(10, 10, 16, 0.85); color: var(--muted); font-size: 20px; line-height: 1; }
 .modal-close:hover, .modal-close:focus-visible { color: var(--text); outline: none; }
 @media (prefers-reduced-motion: no-preference) {

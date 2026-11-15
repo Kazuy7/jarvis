@@ -42,6 +42,14 @@ const TERM = { cols: 120, rows: 30 };
 /** Nome de cada modal para leitores de tela. */
 const MODAL_LABEL: Record<TopModal, string> = { day: 'Notícias', settings: 'Configurações', commands: 'Comandos de voz' };
 
+/** Nome do modal de leitura para leitores de tela. */
+function panelLabel(panel: Panel | null): string {
+  if (panel?.kind === 'files') return panel.title;
+  if (panel?.kind === 'skill') return `Skill ${panel.skill.name}`;
+  if (panel?.kind === 'new-project') return 'Novo projeto';
+  return 'Sobre o projeto';
+}
+
 export function App() {
   const token = useMemo(
     () => takeToken(window.location, window.sessionStorage, (url) => window.history.replaceState(null, '', url)),
@@ -208,7 +216,7 @@ function Connected({ token }: { token: string }) {
   useHoldKeys(globeShortcutOn ? globeHotkey : null, () => setGlobeStyle(nextGlobeStyle(globeStyle)));
   const holdLevel = useCallback(() => voiceRef.current?.micLevel() ?? 0, []);
   const waveText = waveLabel(!!voice.holding, settings.voice, hotkey.label);
-  const wave = waveText ? wavePlace(use3d, modal !== null) : null;
+  const wave = waveText ? wavePlace(use3d, modal !== null || panel !== null) : null;
 
   // Com a conversa de volta a esperar "Hey Jarvis", as legendas ficam ate um clique em qualquer lugar:
   // da para conferir o que o Jarvis falou mesmo sem ter ouvido na hora.
@@ -408,7 +416,10 @@ function Connected({ token }: { token: string }) {
 
   onUiRef.current = (command: UiCommand) => {
     // O modal cobre a tela: o que o Jarvis abrir precisa ficar a vista.
-    if (command.kind === 'commands') return setModal('commands');
+    if (command.kind === 'commands') {
+      setPanel(null);
+      return setModal('commands');
+    }
     setModal(null);
     if (command.kind === 'back') return dispatch({ type: 'back' });
     if (command.kind === 'focus-session') return focusTab(command.id);
@@ -432,7 +443,9 @@ function Connected({ token }: { token: string }) {
       const inTerminal = target?.closest?.('.terminal') != null;
       if (e.ctrlKey && !e.shiftKey && !e.altKey && e.key.toLowerCase() === 'k' && !inTerminal) {
         e.preventDefault();
+        // A busca fica abaixo dos modais: fecha o que estiver aberto.
         setModal(null);
+        setPanel(null);
         setSearchOpen(true);
         return;
       }
@@ -590,14 +603,10 @@ function Connected({ token }: { token: string }) {
                 coreMode !== 'idle' && <div className="core-caption">{MODE_LABEL[coreMode]}</div>
               )}
             </div>
-            {readingPanel && (
-              <aside className="panel-overlay">
-                <button className="panel-close" onClick={() => setPanel(null)} aria-label="Fechar painel">
-                  ×
-                </button>
-                {readingPanel}
-              </aside>
-            )}
+            {/* Leitura (skill, projeto, arquivos, novo projeto): modal como os do topo. */}
+            <Modal open={readingPanel !== null} label={panelLabel(panel)} wide={panel?.kind === 'files' || panel?.kind === 'skill'} onClose={() => setPanel(null)}>
+              {readingPanel}
+            </Modal>
           </>
         ) : (
           listPanel
