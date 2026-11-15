@@ -191,13 +191,15 @@ export function waveLabel(holding: boolean, listening: boolean, hotkey: string):
   return listening ? 'Microfone ligado' : null;
 }
 
-export type WavePlace = '' | 'beside-panel' | 'over-modal';
+export type WavePlace = '' | 'docked' | 'over-modal';
 
-/** Onde a onda fica para nao cobrir a leitura; modal e painel flutuante so existem no modo 3D. */
-export function wavePlace(use3d: boolean, modal: boolean, panel: boolean): WavePlace {
+/**
+ * Onde a onda fica: no modo 3D, logo acima do estado da voz ("ouvindo") ou da legenda; com modal
+ * (que cobre o centro), na faixa livre acima dele. No modo lista, no canto do conteudo.
+ */
+export function wavePlace(use3d: boolean, modal: boolean): WavePlace {
   if (!use3d) return '';
-  if (modal) return 'over-modal';
-  return panel ? 'beside-panel' : '';
+  return modal ? 'over-modal' : 'docked';
 }
 
 const MIN_BAR = 0.06;

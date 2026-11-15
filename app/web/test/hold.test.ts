@@ -394,10 +394,10 @@ describe('onda', () => {
   });
 
   it('sai da frente do painel e do modal do modo 3D; no modo lista, fica no canto', () => {
-    expect(wavePlace(true, false, false)).toBe('');
-    expect(wavePlace(true, false, true)).toBe('beside-panel');
-    expect(wavePlace(true, true, true)).toBe('over-modal');
-    expect(wavePlace(false, true, true)).toBe('');
+    expect(wavePlace(true, false)).toBe('docked');
+    expect(wavePlace(true, true)).toBe('over-modal');
+    expect(wavePlace(false, true)).toBe('');
+    expect(wavePlace(false, false)).toBe('');
   });
 
   it('o volume do quadro vai de 0 a 1', () => {

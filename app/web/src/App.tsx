@@ -208,6 +208,7 @@ function Connected({ token }: { token: string }) {
   useHoldKeys(globeShortcutOn ? globeHotkey : null, () => setGlobeStyle(nextGlobeStyle(globeStyle)));
   const holdLevel = useCallback(() => voiceRef.current?.micLevel() ?? 0, []);
   const waveText = waveLabel(!!voice.holding, settings.voice, hotkey.label);
+  const wave = waveText ? wavePlace(use3d, modal !== null) : null;
 
   // Legendas somem 8 s depois que a conversa volta a esperar "Hey Jarvis".
   useEffect(() => {
@@ -574,14 +575,18 @@ function Connected({ token }: { token: string }) {
                 </div>
               </div>
             )}
-            {(voice.user || voice.jarvis) ? (
-              <div className="captions">
-                {voice.user && <p className="you">você: {voice.user}</p>}
-                {voice.jarvis && <p className="jarvis">{voice.jarvis}</p>}
-              </div>
-            ) : (
-              coreMode !== 'idle' && <div className="core-caption">{MODE_LABEL[coreMode]}</div>
-            )}
+            {/* A onda fica junto do estado da voz ("ouvindo") e das legendas, logo acima deles. */}
+            <div className="voice-dock">
+              {wave === 'docked' && <HoldWave level={holdLevel} reduced={reduceMotion} label={waveText ?? ''} place={wave} />}
+              {voice.user || voice.jarvis ? (
+                <div className="captions">
+                  {voice.user && <p className="you">você: {voice.user}</p>}
+                  {voice.jarvis && <p className="jarvis">{voice.jarvis}</p>}
+                </div>
+              ) : (
+                coreMode !== 'idle' && <div className="core-caption">{MODE_LABEL[coreMode]}</div>
+              )}
+            </div>
             {readingPanel && (
               <aside className="panel-overlay">
                 <button className="panel-close" onClick={() => setPanel(null)} aria-label="Fechar painel">
@@ -595,7 +600,7 @@ function Connected({ token }: { token: string }) {
           listPanel
         )}
       </main>
-      {waveText && <HoldWave level={holdLevel} reduced={reduceMotion} label={waveText} place={wavePlace(use3d, modal !== null, !!readingPanel)} />}
+      {wave !== null && wave !== 'docked' && <HoldWave level={holdLevel} reduced={reduceMotion} label={waveText ?? ''} place={wave} />}
       {backgroundCount > 0 && (
         <div className="background-tasks" role="status">
           {backgroundLabel(backgroundCount)}
