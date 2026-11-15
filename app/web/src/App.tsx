@@ -39,6 +39,8 @@ import { setAutostart, useDesktop } from './desktop.ts';
 const CoreScene = lazy(() => import('./scene/CoreScene.tsx').then((m) => ({ default: m.CoreScene })));
 
 const TERM = { cols: 120, rows: 30 };
+/** Nome de cada modal para leitores de tela. */
+const MODAL_LABEL: Record<TopModal, string> = { day: 'Notícias', settings: 'Configurações', commands: 'Comandos de voz' };
 
 export function App() {
   const token = useMemo(
@@ -69,7 +71,7 @@ function Connected({ token }: { token: string }) {
   // Esperando a combinacao nova nas configuracoes: nenhum atalho do app reage as teclas.
   const [hotkeyCapturing, setHotkeyCapturing] = useState(false);
   const voiceActive = voiceOn || holdKey;
-  // Modal aberto pelos botoes do topo: painel do dia (clima, noticias) ou configuracoes.
+  // Modal aberto pelos botoes do topo (painel do dia, configuracoes) ou pelo cartao de comandos de voz.
   const [modal, setModal] = useState<TopModal | null>(null);
   const desktop = useDesktop();
   // Janela flutuante do navegador (Picture-in-Picture): aberta por um clique nas configuracoes.
@@ -354,6 +356,7 @@ function Connected({ token }: { token: string }) {
       if (!a) return;
       if (a.type === 'nav') dispatch({ type: 'push', node: a.node });
       else if (a.type === 'panel') setPanel(a.panel);
+      else if (a.type === 'modal') setModal(a.modal);
       else if (a.type === 'open') openSession(a.projectPath, a.agent, a.resume);
       else if (a.type === 'task') runTask(a.task);
       else focusTab(a.sessionId);
@@ -401,10 +404,10 @@ function Connected({ token }: { token: string }) {
 
   onUiRef.current = (command: UiCommand) => {
     // O modal cobre a tela: o que o Jarvis abrir precisa ficar a vista.
+    if (command.kind === 'commands') return setModal('commands');
     setModal(null);
     if (command.kind === 'back') return dispatch({ type: 'back' });
     if (command.kind === 'focus-session') return focusTab(command.id);
-    if (command.kind === 'commands') return setPanel({ kind: 'commands' });
     const node = command.node;
     if (refs.current.use3d) {
       setPanel(null);
@@ -478,8 +481,6 @@ function Connected({ token }: { token: string }) {
       <SkillDetail skill={panel.skill} />
     ) : panel?.kind === 'project' ? (
       <ProjectInfo detail={panel.detail} />
-    ) : panel?.kind === 'commands' ? (
-      <CommandsPanel />
     ) : panel?.kind === 'new-project' ? (
       <NewProjectPanel base={overview?.projectsDir ?? ''} onCreate={createProject} />
     ) : panel?.kind === 'files' ? (
@@ -495,8 +496,10 @@ function Connected({ token }: { token: string }) {
     <div className={use3d ? 'app full' : 'app'}>
       {use3d ? (
         // Mesmo fechado, o painel do dia fica montado: mantem o clima e as noticias em dia para a abertura.
-        <Modal open={modal !== null} label={modal === 'settings' ? 'Configurações' : 'Notícias'} wide={modal === 'settings'} onClose={() => setModal(null)}>
-          {modal === 'settings' ? (
+        <Modal open={modal !== null} label={MODAL_LABEL[modal ?? 'day']} wide={modal === 'settings'} onClose={() => setModal(null)}>
+          {modal === 'commands' ? (
+            <CommandsPanel />
+          ) : modal === 'settings' ? (
             <SettingsPanel
               api={api}
               settings={settings}

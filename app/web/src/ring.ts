@@ -1,20 +1,21 @@
 import type { NavNode } from './nav.ts';
 import type { Overview, ProjectDetail, SessionAgent, SessionInfo, Skill, TaskName, TextFile } from './types.ts';
 import { LABEL, formatDate } from './format.ts';
+import type { TopModal } from './components/TopActions.tsx';
 
 /** Conteudo do painel de leitura. */
 export type Panel =
   | { kind: 'skill'; skill: Skill }
   | { kind: 'files'; title: string; files: TextFile[] }
   | { kind: 'project'; detail: ProjectDetail }
-  | { kind: 'new-project' }
-  | { kind: 'commands' };
+  | { kind: 'new-project' };
 
 export type Tone = 'claude' | 'codex' | 'both' | 'shell' | 'plugin' | 'accent' | 'warn' | 'muted' | 'add';
 
 export type ItemAction =
   | { type: 'nav'; node: NavNode }
   | { type: 'panel'; panel: Panel }
+  | { type: 'modal'; modal: TopModal }
   | { type: 'open'; projectPath: string; agent: SessionAgent; resume?: string }
   | { type: 'tab'; sessionId: string }
   | { type: 'task'; task: TaskName };
@@ -78,7 +79,7 @@ export function itemsFor(node: NavNode, { overview, sessions, detail }: RingData
         },
         {
           key: 'commands', title: 'Comandos de voz', subtitle: 'o que dá para pedir ao Jarvis', tone: 'muted',
-          action: { type: 'panel', panel: { kind: 'commands' } },
+          action: { type: 'modal', modal: 'commands' },
         },
       ];
     case 'profile':
