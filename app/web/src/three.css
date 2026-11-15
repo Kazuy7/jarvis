@@ -24,7 +24,7 @@
   grid-column: -2 / -1; grid-row: 1; align-self: end; justify-self: start; position: relative; z-index: 6; margin: 0 16px 6px;
   display: flex; align-items: center; gap: 2px; height: 24px; pointer-events: none;
 }
-.hold-wave.docked { margin: 0; }
+.hold-wave.docked { align-self: center; margin: 0; }
 .hold-wave.over-modal { position: fixed; top: 2px; left: 50%; z-index: 13; height: 20px; margin: 0; transform: translateX(-50%); }
 .hold-wave span { width: 3px; height: 100%; border-radius: 2px; background: var(--sys-main); transform: scaleY(0.06); }
 .voice-dock { position: absolute; left: 50%; bottom: 48px; transform: translateX(-50%); z-index: 3; width: min(560px, 60%); display: flex; flex-direction: column; align-items: center; gap: 10px; pointer-events: none; }
