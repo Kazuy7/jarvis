@@ -210,12 +210,15 @@ function Connected({ token }: { token: string }) {
   const waveText = waveLabel(!!voice.holding, settings.voice, hotkey.label);
   const wave = waveText ? wavePlace(use3d, modal !== null) : null;
 
-  // Legendas somem 8 s depois que a conversa volta a esperar "Hey Jarvis".
+  // Com a conversa de volta a esperar "Hey Jarvis", as legendas ficam ate um clique em qualquer lugar:
+  // da para conferir o que o Jarvis falou mesmo sem ter ouvido na hora.
+  const hasCaptions = !!(voice.user || voice.jarvis);
   useEffect(() => {
-    if (voice.state !== 'sleeping' || (!voice.user && !voice.jarvis)) return;
-    const id = setTimeout(() => setVoice((v) => ({ ...v, user: '', jarvis: '' })), 8000);
-    return () => clearTimeout(id);
-  }, [voice.state, voice.user, voice.jarvis]);
+    if (voice.state !== 'sleeping' || !hasCaptions) return;
+    const clear = () => setVoice((v) => ({ ...v, user: '', jarvis: '' }));
+    window.addEventListener('pointerdown', clear, true);
+    return () => window.removeEventListener('pointerdown', clear, true);
+  }, [voice.state, hasCaptions]);
 
   // Sinal do nucleo: voz real, demonstracao ou parado.
   useEffect(() => {
