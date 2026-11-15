@@ -1,4 +1,4 @@
-export type TopModal = 'day' | 'settings';
+export type TopModal = 'day' | 'settings' | 'commands';
 
 interface Props {
   /** Texto do filtro; null quando o nivel atual nao tem o que filtrar. */

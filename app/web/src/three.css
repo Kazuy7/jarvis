@@ -18,16 +18,17 @@
 .top-action { display: grid; place-items: center; width: 34px; height: 34px; padding: 0; border: none; outline: none; background: transparent; color: var(--sys-soft); line-height: 1; filter: drop-shadow(0 1px 4px rgba(0, 0, 0, 0.9)); transition: color 0.15s, transform 0.15s; }
 .top-action.gear { font-size: 22px; }
 .top-action:hover, .top-action:focus-visible { color: var(--sys-hot); transform: scale(1.12); }
-/* Onda da voz (atalho de falar ou escuta continua): na altura da frase das tarefas em background, no canto esquerdo do conteudo.
-   Nao cobre a leitura: fica ao lado do painel aberto e, com modal, na faixa livre acima dele (o padding do overlay). */
+/* Onda da voz (atalho de falar ou escuta continua). Modo lista: na altura da frase das tarefas em background, no canto
+   esquerdo do conteudo. Modo 3D: acima do estado da voz ("ouvindo") e, com modal, na faixa livre acima dele (o padding do overlay). */
 .hold-wave {
   grid-column: -2 / -1; grid-row: 1; align-self: end; justify-self: start; position: relative; z-index: 6; margin: 0 16px 6px;
   display: flex; align-items: center; gap: 2px; height: 24px; pointer-events: none;
 }
-.hold-wave.beside-panel { margin-left: calc(min(440px, 34%) + 32px); }
+.hold-wave.docked { align-self: center; margin: 0; }
 .hold-wave.over-modal { position: fixed; top: 2px; left: 50%; z-index: 13; height: 20px; margin: 0; transform: translateX(-50%); }
 .hold-wave span { width: 3px; height: 100%; border-radius: 2px; background: var(--sys-main); transform: scaleY(0.06); }
-.core-caption { position: absolute; left: 50%; bottom: 56px; transform: translateX(-50%); z-index: 2; color: var(--sys-dim); font-size: 12px; letter-spacing: 0.25em; text-transform: uppercase; pointer-events: none; }
+.voice-dock { position: absolute; left: 50%; bottom: 48px; transform: translateX(-50%); z-index: 3; width: min(560px, 60%); display: flex; flex-direction: column; align-items: center; gap: 10px; pointer-events: none; }
+.core-caption { margin-bottom: 8px; color: var(--sys-dim); font-size: 12px; letter-spacing: 0.25em; text-transform: uppercase; }
 
 .ring { position: absolute; inset: 0; z-index: 2; pointer-events: none; }
 .ring-card {
@@ -98,7 +99,7 @@
 .settings label { display: flex; align-items: center; gap: 8px; cursor: pointer; }
 .day .hint, .sidebar .hint { margin-top: 0; }
 .voice-status { margin: -2px 0 4px 24px; color: var(--sys-soft); white-space: pre-line; line-height: 1.5; }
-.captions { position: absolute; left: 50%; bottom: 48px; transform: translateX(-50%); z-index: 3; width: min(560px, 60%); text-align: center; pointer-events: none; }
+.captions { width: 100%; text-align: center; }
 .captions p { margin: 4px 0; line-height: 1.4; text-shadow: 0 1px 6px rgba(0, 0, 0, 0.9); }
 .captions .you { color: var(--muted); font-size: 13px; }
 .captions .jarvis { color: var(--sys-pale); font-size: 15px; }
@@ -122,6 +123,8 @@
 .modal { position: relative; display: flex; flex-direction: column; width: min(560px, 100%); max-height: 100%; background: rgba(10, 10, 16, 0.95); border: 1px solid rgba(var(--sys-rgb), 0.18); border-radius: 14px; box-shadow: 0 18px 60px rgba(0, 0, 0, 0.6); outline: none; }
 .modal.wide { width: min(940px, 100%); }
 .modal .day { flex: 1; min-height: 0; padding: 24px 28px; border: none; background: transparent; }
+.modal .commands-panel { flex: 1; min-height: 0; overflow: auto; padding: 24px 28px; }
+.modal .commands-panel h1 { padding-right: 36px; }
 .modal-close { position: absolute; top: 14px; right: 18px; z-index: 1; width: 28px; height: 28px; padding: 0; border: none; border-radius: 50%; background: rgba(10, 10, 16, 0.85); color: var(--muted); font-size: 20px; line-height: 1; }
 .modal-close:hover, .modal-close:focus-visible { color: var(--text); outline: none; }
 @media (prefers-reduced-motion: no-preference) {

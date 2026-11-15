@@ -44,7 +44,7 @@ describe('itemsFor', () => {
       ['Sessões abertas', '1'],
       ['Comandos de voz', undefined],
     ]);
-    expect(items[4].action).toEqual({ type: 'panel', panel: { kind: 'commands' } });
+    expect(items[4].action).toEqual({ type: 'modal', modal: 'commands' });
     expect(items[0].action).toEqual({ type: 'nav', node: { kind: 'profile' } });
     expect(items[3].live).toBe(true);
   });

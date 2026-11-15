@@ -39,6 +39,8 @@ import { setAutostart, useDesktop } from './desktop.ts';
 const CoreScene = lazy(() => import('./scene/CoreScene.tsx').then((m) => ({ default: m.CoreScene })));
 
 const TERM = { cols: 120, rows: 30 };
+/** Nome de cada modal para leitores de tela. */
+const MODAL_LABEL: Record<TopModal, string> = { day: 'Notícias', settings: 'Configurações', commands: 'Comandos de voz' };
 
 export function App() {
   const token = useMemo(
@@ -69,7 +71,7 @@ function Connected({ token }: { token: string }) {
   // Esperando a combinacao nova nas configuracoes: nenhum atalho do app reage as teclas.
   const [hotkeyCapturing, setHotkeyCapturing] = useState(false);
   const voiceActive = voiceOn || holdKey;
-  // Modal aberto pelos botoes do topo: painel do dia (clima, noticias) ou configuracoes.
+  // Modal aberto pelos botoes do topo (painel do dia, configuracoes) ou pelo cartao de comandos de voz.
   const [modal, setModal] = useState<TopModal | null>(null);
   const desktop = useDesktop();
   // Janela flutuante do navegador (Picture-in-Picture): aberta por um clique nas configuracoes.
@@ -206,13 +208,17 @@ function Connected({ token }: { token: string }) {
   useHoldKeys(globeShortcutOn ? globeHotkey : null, () => setGlobeStyle(nextGlobeStyle(globeStyle)));
   const holdLevel = useCallback(() => voiceRef.current?.micLevel() ?? 0, []);
   const waveText = waveLabel(!!voice.holding, settings.voice, hotkey.label);
+  const wave = waveText ? wavePlace(use3d, modal !== null) : null;
 
-  // Legendas somem 8 s depois que a conversa volta a esperar "Hey Jarvis".
+  // Com a conversa de volta a esperar "Hey Jarvis", as legendas ficam ate um clique em qualquer lugar:
+  // da para conferir o que o Jarvis falou mesmo sem ter ouvido na hora.
+  const hasCaptions = !!(voice.user || voice.jarvis);
   useEffect(() => {
-    if (voice.state !== 'sleeping' || (!voice.user && !voice.jarvis)) return;
-    const id = setTimeout(() => setVoice((v) => ({ ...v, user: '', jarvis: '' })), 8000);
-    return () => clearTimeout(id);
-  }, [voice.state, voice.user, voice.jarvis]);
+    if (voice.state !== 'sleeping' || !hasCaptions) return;
+    const clear = () => setVoice((v) => ({ ...v, user: '', jarvis: '' }));
+    window.addEventListener('pointerdown', clear, true);
+    return () => window.removeEventListener('pointerdown', clear, true);
+  }, [voice.state, hasCaptions]);
 
   // Sinal do nucleo: voz real, demonstracao ou parado.
   useEffect(() => {
@@ -354,6 +360,7 @@ function Connected({ token }: { token: string }) {
       if (!a) return;
       if (a.type === 'nav') dispatch({ type: 'push', node: a.node });
       else if (a.type === 'panel') setPanel(a.panel);
+      else if (a.type === 'modal') setModal(a.modal);
       else if (a.type === 'open') openSession(a.projectPath, a.agent, a.resume);
       else if (a.type === 'task') runTask(a.task);
       else focusTab(a.sessionId);
@@ -401,10 +408,10 @@ function Connected({ token }: { token: string }) {
 
   onUiRef.current = (command: UiCommand) => {
     // O modal cobre a tela: o que o Jarvis abrir precisa ficar a vista.
+    if (command.kind === 'commands') return setModal('commands');
     setModal(null);
     if (command.kind === 'back') return dispatch({ type: 'back' });
     if (command.kind === 'focus-session') return focusTab(command.id);
-    if (command.kind === 'commands') return setPanel({ kind: 'commands' });
     const node = command.node;
     if (refs.current.use3d) {
       setPanel(null);
@@ -478,8 +485,6 @@ function Connected({ token }: { token: string }) {
       <SkillDetail skill={panel.skill} />
     ) : panel?.kind === 'project' ? (
       <ProjectInfo detail={panel.detail} />
-    ) : panel?.kind === 'commands' ? (
-      <CommandsPanel />
     ) : panel?.kind === 'new-project' ? (
       <NewProjectPanel base={overview?.projectsDir ?? ''} onCreate={createProject} />
     ) : panel?.kind === 'files' ? (
@@ -495,8 +500,10 @@ function Connected({ token }: { token: string }) {
     <div className={use3d ? 'app full' : 'app'}>
       {use3d ? (
         // Mesmo fechado, o painel do dia fica montado: mantem o clima e as noticias em dia para a abertura.
-        <Modal open={modal !== null} label={modal === 'settings' ? 'Configurações' : 'Notícias'} wide={modal === 'settings'} onClose={() => setModal(null)}>
-          {modal === 'settings' ? (
+        <Modal open={modal !== null} label={MODAL_LABEL[modal ?? 'day']} wide={modal === 'settings'} onClose={() => setModal(null)}>
+          {modal === 'commands' ? (
+            <CommandsPanel />
+          ) : modal === 'settings' ? (
             <SettingsPanel
               api={api}
               settings={settings}
@@ -571,14 +578,18 @@ function Connected({ token }: { token: string }) {
                 </div>
               </div>
             )}
-            {(voice.user || voice.jarvis) ? (
-              <div className="captions">
-                {voice.user && <p className="you">você: {voice.user}</p>}
-                {voice.jarvis && <p className="jarvis">{voice.jarvis}</p>}
-              </div>
-            ) : (
-              coreMode !== 'idle' && <div className="core-caption">{MODE_LABEL[coreMode]}</div>
-            )}
+            {/* A onda fica junto do estado da voz ("ouvindo") e das legendas, logo acima deles. */}
+            <div className="voice-dock">
+              {wave === 'docked' && <HoldWave level={holdLevel} reduced={reduceMotion} label={waveText ?? ''} place={wave} />}
+              {voice.user || voice.jarvis ? (
+                <div className="captions">
+                  {voice.user && <p className="you">você: {voice.user}</p>}
+                  {voice.jarvis && <p className="jarvis">{voice.jarvis}</p>}
+                </div>
+              ) : (
+                coreMode !== 'idle' && <div className="core-caption">{MODE_LABEL[coreMode]}</div>
+              )}
+            </div>
             {readingPanel && (
               <aside className="panel-overlay">
                 <button className="panel-close" onClick={() => setPanel(null)} aria-label="Fechar painel">
@@ -592,7 +603,7 @@ function Connected({ token }: { token: string }) {
           listPanel
         )}
       </main>
-      {waveText && <HoldWave level={holdLevel} reduced={reduceMotion} label={waveText} place={wavePlace(use3d, modal !== null, !!readingPanel)} />}
+      {wave !== null && wave !== 'docked' && <HoldWave level={holdLevel} reduced={reduceMotion} label={waveText ?? ''} place={wave} />}
       {backgroundCount > 0 && (
         <div className="background-tasks" role="status">
           {backgroundLabel(backgroundCount)}
