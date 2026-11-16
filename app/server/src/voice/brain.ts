@@ -1,4 +1,4 @@
-import { query, type McpServerConfig, type Query, type SDKMessage, type SDKUserMessage } from '@anthropic-ai/claude-agent-sdk';
+import { query, type McpServerConfig, type Query, type SDKMessage, type SDKResultMessage, type SDKUserMessage } from '@anthropic-ai/claude-agent-sdk';
 import { COMMANDS } from './commands.ts';
 import { JARVIS_TOOL_NAMES } from './tools.ts';
 import type { WatchReport, WatchSummarizer } from './session-watch.ts';
@@ -48,6 +48,22 @@ export const JARVIS_PROMPT = [
   `Comandos disponíveis: ${COMMANDS.map((c) => `${c.title} (ex.: "${c.examples[0]}")`).join('; ')}.`,
 ].join(' ');
 
+export const AUTH_FAILURE = 'Falha de autenticação';
+
+/**
+ * Erro de um "result" do SDK, ou undefined se deu certo. Falhas da API (ex.: login
+ * expirado) chegam com subtype "success" e is_error: so o is_error as denuncia.
+ */
+export function resultError(m: SDKResultMessage): Error | undefined {
+  if (m.subtype === 'success' && !m.is_error) return undefined;
+  const detail = m.subtype === 'success' ? m.result : [m.subtype, ...(m.errors ?? [])].join(': ');
+  const status = m.subtype === 'success' ? m.api_error_status : undefined;
+  if (status === 401 || /authenticat|oauth|\blog ?in\b|unauthorized/i.test(detail ?? '')) {
+    return new Error(`${AUTH_FAILURE}: o login do Claude expirou. Rode "claude" no terminal, faça /login e reinicie o jarvis ui.`);
+  }
+  return new Error(`o cérebro terminou com erro: ${detail || m.subtype}`);
+}
+
 /** Ambiente do cerebro sem credenciais de API: ele usa sempre o login do plano. */
 export function brainEnv(env: Record<string, string | undefined> = process.env): Record<string, string | undefined> {
   const out: Record<string, string | undefined> = {};
@@ -93,8 +109,9 @@ export function claudeWebSearch(opts: { model: string; cwd: string; query?: Quer
     try {
       for await (const m of q) {
         if (m.type !== 'result') continue;
-        if (m.subtype !== 'success') throw new Error(m.subtype);
-        return m.result;
+        const err = resultError(m);
+        if (err) throw err;
+        if (m.subtype === 'success') return m.result;
       }
       throw new Error('a busca terminou sem resposta');
     } catch (err) {
@@ -258,9 +275,10 @@ export class ClaudeBrain implements Brain {
         const m = await this.next();
         if (m.type === 'result') {
           this.inTurn = false;
-          if (!signal.aborted && m.subtype !== 'success') {
+          const err = signal.aborted ? undefined : resultError(m);
+          if (err) {
             this.close();
-            throw new Error(`o cérebro terminou com erro: ${m.subtype}`);
+            throw err;
           }
           return;
         }

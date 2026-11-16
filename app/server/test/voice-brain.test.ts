@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { ClaudeBrain, JUDGE_PROMPT, WATCH_PROMPT, brainEnv, claudeJudge, claudeWatchSummary, claudeWebSearch, type QueryFn } from '../src/voice/brain.ts';
+import { AUTH_FAILURE, ClaudeBrain, JUDGE_PROMPT, WATCH_PROMPT, brainEnv, claudeJudge, claudeWatchSummary, claudeWebSearch, resultError, type QueryFn } from '../src/voice/brain.ts';
 
 const delta = (text: string) => ({ type: 'stream_event', event: { type: 'content_block_delta', index: 0, delta: { type: 'text_delta', text } } });
 const ok = { type: 'result', subtype: 'success', session_id: 's1' };
@@ -82,6 +82,27 @@ test('erro na resposta fecha a sessao; a proxima fala retoma a conversa', async 
   assert.deepEqual(await collect(brain, 'y'), ['ok']);
   assert.equal(q2.calls[0].options.resume, 's1');
   brain.close();
+});
+
+test('login expirado (success com is_error) vira Falha de autenticacao, em vez de resposta vazia', async () => {
+  const expired = { type: 'result', subtype: 'success', is_error: true, result: 'Failed to authenticate: OAuth session expired and could not be refreshed', session_id: 's1' };
+  const q = fakeQuery([[expired], [delta('voltei'), ok]]);
+  const brain = new ClaudeBrain({ model: 'haiku', cwd: '/w', query: q.fn });
+  await assert.rejects(collect(brain, 'oi'), (err: Error) => err.message.startsWith(AUTH_FAILURE));
+  brain.close();
+});
+
+test('resultError: outros erros da API levam o detalhe; sucesso nao e erro', () => {
+  const base = { type: 'result', session_id: 's1' } as const;
+  assert.equal(resultError({ ...base, subtype: 'success', is_error: false, result: 'oi' } as any), undefined);
+  assert.match(resultError({ ...base, subtype: 'success', is_error: true, result: 'API Error: 529 Overloaded' } as any)!.message, /529 Overloaded/);
+  assert.match(resultError({ ...base, subtype: 'success', is_error: true, result: '', api_error_status: 401 } as any)!.message, new RegExp(`^${AUTH_FAILURE}`));
+  assert.match(resultError({ ...base, subtype: 'error_during_execution', is_error: true, errors: ['boom'] } as any)!.message, /error_during_execution: boom/);
+});
+
+test('claudeWebSearch: login expirado vira Falha de autenticacao, e nao o texto da busca', async () => {
+  const q = oneShot([{ type: 'result', subtype: 'success', is_error: true, result: 'Failed to authenticate: OAuth session expired', session_id: 'w' }]);
+  await assert.rejects(claudeWebSearch({ model: 'haiku', cwd: '/w', query: q.fn })('x'), (err: Error) => err.message.startsWith(AUTH_FAILURE));
 });
 
 test('brainEnv remove credenciais de API do ambiente', () => {
